@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // catch-all deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    match /buildings/{buildingId} {
+      allow read, write: if isSignedIn();
+
+      match /visits/{visitId} {
+        allow read, write: if isSignedIn();
+      }
+    }
+    
+    // User profile or other system collections can be added here
+  }
+}

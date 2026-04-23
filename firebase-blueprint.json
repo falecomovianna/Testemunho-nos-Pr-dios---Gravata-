@@ -1,0 +1,52 @@
+{
+  "entities": {
+    "Building": {
+      "title": "Building",
+      "description": "Represents a building (territory) to be visited.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "territoryNumber": { "type": "string" },
+        "buildingNumber": { "type": "string" },
+        "address": { "type": "string" },
+        "name": { "type": "string" },
+        "mailbox": { "type": "string", "enum": ["Externa", "Interna"] },
+        "intercom": { "type": "string", "enum": ["Externo", "Interno", "Não Tem"] },
+        "blocks": { "type": "string" },
+        "apartmentsCount": { "type": "string" },
+        "apartments": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["territoryNumber", "buildingNumber", "address"]
+    },
+    "Visit": {
+      "title": "Visit",
+      "description": "Represents a visit made to a specific apartment in a building.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "buildingId": { "type": "string" },
+        "apartment": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "contacted": { "type": "boolean" },
+        "notes": { "type": "string" },
+        "visitorId": { "type": "string" },
+        "visitorEmail": { "type": "string" }
+      },
+      "required": ["buildingId", "apartment", "date"]
+    }
+  },
+  "firestore": {
+    "/buildings": {
+      "schema": "Building",
+      "description": "Collection of buildings/territories."
+    },
+    "/buildings/{buildingId}/visits": {
+      "schema": "Visit",
+      "description": "Sub-collection of visits for a specific building."
+    }
+  }
+}

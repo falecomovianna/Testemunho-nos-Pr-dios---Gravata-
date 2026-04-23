@@ -1,0 +1,9 @@
+{
+  "name": "Testemunhos nos Prédios",
+  "description": "Aplicativo para cadastro e acompanhamento de testemunho em prédios, com extração de dados via IA e integração com GPS.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": [
+    "AI Data Extraction",
+    "Real-time Database"
+  ]
+}
