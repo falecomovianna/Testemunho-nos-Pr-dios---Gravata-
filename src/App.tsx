@@ -637,9 +637,10 @@ Não Trabalhados:     ${notWorked}
     if (!searchTerm.trim()) return true;
     const term = searchTerm.trim().toLowerCase();
     const isNumeric = /^\d+$/.test(term);
+    const normalizedBuilding = b.buildingNumber.replace(/^0+/, '') || '0';
+    const normalizedTerm = term.replace(/^0+/, '') || '0';
     const matchesNumber = isNumeric
-      ? parseInt(b.buildingNumber, 10) === parseInt(term, 10) ||
-        b.buildingNumber.toLowerCase().includes(term)
+      ? normalizedBuilding === normalizedTerm || b.buildingNumber.toLowerCase().includes(term)
       : b.buildingNumber.toLowerCase().includes(term);
     const matchesAddress = b.address.toLowerCase().includes(term);
     const matchesName = b.name ? b.name.toLowerCase().includes(term) : false;
