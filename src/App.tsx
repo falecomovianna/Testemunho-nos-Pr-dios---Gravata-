@@ -634,11 +634,15 @@ Não Trabalhados:     ${notWorked}
     if (activeFilter === 'completed' && !b.isCompleted) return false;
 
     // Apply search filter
-    return (
-      b.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      b.buildingNumber.includes(searchTerm) ||
-      (b.name && b.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    if (!searchTerm.trim()) return true;
+    const term = searchTerm.trim().toLowerCase();
+    const isNumeric = /^\d+$/.test(term);
+    const matchesNumber = isNumeric
+      ? b.buildingNumber === term || b.buildingNumber === String(parseInt(term))
+      : b.buildingNumber.toLowerCase().includes(term);
+    const matchesAddress = b.address.toLowerCase().includes(term);
+    const matchesName = b.name ? b.name.toLowerCase().includes(term) : false;
+    return matchesNumber || matchesAddress || matchesName;
   });
 
   if (isLoading) {
