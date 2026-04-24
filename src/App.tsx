@@ -119,7 +119,7 @@ export default function App() {
   const [itemToDelete, setItemToDelete] = useState<{type: 'visit' | 'apartment' | 'building', id: string} | null>(null);
   
   const [showEditBuildingModal, setShowEditBuildingModal] = useState(false);
-  const [editBuildingForm, setEditBuildingForm] = useState<{name: string, buildingNumber: string, address: string}>({name: '', buildingNumber: '', address: ''});
+  const [editBuildingForm, setEditBuildingForm] = useState<{name: string, buildingNumber: string, address: string, apartmentsCount: string}>({name: '', buildingNumber: '', address: '', apartmentsCount: ''});
 
   const [newAptName, setNewAptName] = useState('');
   const [reportPassword, setReportPassword] = useState('');
@@ -913,7 +913,8 @@ Não Trabalhados:     ${notWorked}
                       setEditBuildingForm({
                         name: selectedBuilding.name || '',
                         buildingNumber: selectedBuilding.buildingNumber || '',
-                        address: selectedBuilding.address || ''
+                        address: selectedBuilding.address || '',
+                        apartmentsCount: selectedBuilding.apartmentsCount || ''
                       });
                       setShowEditBuildingModal(true);
                     }}
@@ -1498,6 +1499,16 @@ Não Trabalhados:     ${notWorked}
                       onChange={(e) => setEditBuildingForm({...editBuildingForm, address: e.target.value})}
                       className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-slate-900 font-bold focus:border-blue-500 outline-none transition-all mt-1"
                       rows={3}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-2">Nº de Apartamentos</label>
+                    <input 
+                      type="number"
+                      value={editBuildingForm.apartmentsCount}
+                      onChange={(e) => setEditBuildingForm({...editBuildingForm, apartmentsCount: e.target.value})}
+                      placeholder="Ex: 8"
+                      className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-slate-900 font-bold focus:border-blue-500 outline-none transition-all mt-1"
                     />
                   </div>
                 </div>
