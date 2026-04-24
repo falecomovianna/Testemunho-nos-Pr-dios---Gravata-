@@ -50,6 +50,10 @@ export async function extractBuildingData(imageBase64: string) {
   try {
     const text = response.text || "";
     const parsed = JSON.parse(text);
+    const apartments = Array.isArray(parsed.apartments) ? parsed.apartments : [];
+    const apartmentsCount = apartments.length > 0
+      ? String(apartments.length)
+      : (parsed.apartmentsCount || "0");
     return {
       buildingNumber: parsed.buildingNumber || "S/N",
       address: parsed.address || "Sem endereço",
@@ -57,8 +61,8 @@ export async function extractBuildingData(imageBase64: string) {
       mailbox: parsed.mailbox || "",
       intercom: parsed.intercom || "",
       blocks: parsed.blocks || "",
-      apartmentsCount: parsed.apartmentsCount || "0",
-      apartments: Array.isArray(parsed.apartments) ? parsed.apartments : []
+      apartmentsCount,
+      apartments
     };
   } catch (error) {
     console.error("Erro ao processar resposta da IA:", error);
@@ -107,6 +111,11 @@ export async function extractBuildingDataFromText(text: string) {
   try {
     const responseText = response.text || "";
     const parsed = JSON.parse(responseText);
+    const apartments = Array.isArray(parsed.apartments) ? parsed.apartments : [];
+    // Always derive apartmentsCount from the actual list so it's never 0 when apartments exist
+    const apartmentsCount = apartments.length > 0
+      ? String(apartments.length)
+      : (parsed.apartmentsCount || "0");
     return {
       buildingNumber: parsed.buildingNumber || "S/N",
       address: parsed.address || "Sem endereço",
@@ -114,8 +123,8 @@ export async function extractBuildingDataFromText(text: string) {
       mailbox: parsed.mailbox || "",
       intercom: parsed.intercom || "",
       blocks: parsed.blocks || "",
-      apartmentsCount: parsed.apartmentsCount || "0",
-      apartments: Array.isArray(parsed.apartments) ? parsed.apartments : []
+      apartmentsCount,
+      apartments
     };
   } catch (error) {
     console.error("Erro ao processar resposta da IA:", error);
