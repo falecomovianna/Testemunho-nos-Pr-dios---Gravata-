@@ -638,7 +638,8 @@ Não Trabalhados:     ${notWorked}
     const term = searchTerm.trim().toLowerCase();
     const isNumeric = /^\d+$/.test(term);
     const matchesNumber = isNumeric
-      ? parseInt(b.buildingNumber) === parseInt(term)
+      ? parseInt(b.buildingNumber, 10) === parseInt(term, 10) ||
+        b.buildingNumber.toLowerCase().includes(term)
       : b.buildingNumber.toLowerCase().includes(term);
     const matchesAddress = b.address.toLowerCase().includes(term);
     const matchesName = b.name ? b.name.toLowerCase().includes(term) : false;
