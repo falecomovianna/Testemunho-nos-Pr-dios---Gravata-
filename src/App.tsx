@@ -832,7 +832,7 @@ Não Trabalhados:     ${notWorked}
                     <div className="flex-1 min-w-0 pr-4">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="px-3 py-1 bg-blue-600 text-white text-xs rounded-lg font-black uppercase tracking-wider shadow-sm shadow-blue-500/20">
-                          Prédio: {building.buildingNumber}
+                        Prédio: {parseInt(building.buildingNumber)}
                         </span>
                         <span className="px-2 py-1 bg-slate-100 text-slate-500 text-[10px] rounded-lg font-bold uppercase tracking-wider">
                           Prédio
