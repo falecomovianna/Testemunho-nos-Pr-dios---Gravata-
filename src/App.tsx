@@ -640,8 +640,8 @@ Não Trabalhados:     ${notWorked}
     const normalizedBuilding = b.buildingNumber.replace(/^0+/, '') || '0';
     const normalizedTerm = term.replace(/^0+/, '') || '0';
     const matchesNumber = isNumeric
-      ? normalizedBuilding === normalizedTerm || b.buildingNumber.toLowerCase().includes(term)
-      : b.buildingNumber.toLowerCase().includes(term);
+      ? normalizedBuilding === normalizedTerm 
+    : false;
     const matchesAddress = b.address.toLowerCase().includes(term);
     const matchesName = b.name ? b.name.toLowerCase().includes(term) : false;
   return matchesNumber;
