@@ -644,7 +644,7 @@ Não Trabalhados:     ${notWorked}
       : b.buildingNumber.toLowerCase().includes(term);
     const matchesAddress = b.address.toLowerCase().includes(term);
     const matchesName = b.name ? b.name.toLowerCase().includes(term) : false;
-    return matchesNumber || matchesAddress || matchesName;
+  return matchesNumber;
   });
 
   if (isLoading) {
