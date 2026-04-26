@@ -842,12 +842,16 @@ Não Trabalhados:     ${notWorked}
                              <CheckCircle2 className="w-3 h-3" />
                              Concluído
                           </span>
-                        ) : building.visitCount && building.visitCount > 0 && (
+                        ) : building.visitCount && building.visitCount > 0 ? (
                           <span className="px-2 py-1 bg-blue-100 text-blue-700 text-[10px] rounded-lg font-black uppercase tracking-wider flex items-center gap-1 text-nowrap">
                              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
                              Iniciado
                           </span>
-                        )}
+                        ) : (
+  <span className="px-2 py-1 bg-red-100 text-red-600 text-[10px] rounded-lg font-black uppercase tracking-wider">
+     Não iniciado
+  </span>
+)}
                       </div>
                       <h3 className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                         {building.name || 'Sem nome'}
