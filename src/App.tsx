@@ -629,7 +629,7 @@ Não Trabalhados:     ${notWorked}
 
   const filteredBuildings = buildings.filter(b => {
     // Apply status filter
-    if (activeFilter === 'started' && (!b.visitCount || b.visitCount === 0)) return false;
+    if (activeFilter === 'started' && (!b.visitCount || b.visitCount === 0 || b.isCompleted)) return false;
     if (activeFilter === 'pending' && (b.visitCount && b.visitCount > 0)) return false;
     if (activeFilter === 'completed' && !b.isCompleted) return false;
 
