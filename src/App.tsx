@@ -424,12 +424,8 @@ export default function App() {
     if (!searchTerm.trim()) return true;
     const term = searchTerm.trim().toLowerCase();
     
-    // BUSCA PELO NÚMERO PURO
-    const matchesNumber = b.buildingNumber.toLowerCase().includes(term);
-    const matchesAddress = b.address.toLowerCase().includes(term);
-    const matchesName = b.name ? b.name.toLowerCase().includes(term) : false;
-    
-    return matchesNumber || matchesAddress || matchesName;
+    // Lógica da Lupinha Blindada: Só busca no número (ícone azul)
+    return b.buildingNumber.toLowerCase() === term;
   });
 
   if (isLoading) return <div className="flex items-center justify-center h-screen bg-slate-50"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>;
@@ -447,7 +443,7 @@ export default function App() {
              <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white"><Building2 className="w-6 h-6" /></div>
              <div>
                 <h1 className="font-bold text-lg text-slate-900">{view === 'list' ? 'Testemunhos nos Prédios' : selectedBuilding?.name || 'Detalhes'}</h1>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-1">Meus Prédios e Territórios</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Meus Prédios e Territórios</p>
              </div>
           </div>
         </div>
@@ -496,7 +492,6 @@ export default function App() {
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} key={b.id} onClick={() => { setSelectedBuilding(b); setView('building'); }} className="bg-white p-4 rounded-2xl border flex items-center justify-between cursor-pointer hover:border-blue-200 shadow-sm transition-all group">
                   <div className="flex-1 min-w-0 pr-4">
                     <div className="flex items-center gap-2 mb-2">
-                      {/* CORREÇÃO FINAL: MOSTRA O NÚMERO PURO SEM NENHUMA FORMATAÇÃO */}
                       <span className="px-3 py-1 bg-blue-600 text-white text-[10px] rounded-lg font-black uppercase">Prédio: {b.buildingNumber}</span>
                       {b.isCompleted && b.apartments.length > 0 && <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-[10px] rounded-lg font-black uppercase flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Concluído</span>}
                     </div>
@@ -624,7 +619,7 @@ export default function App() {
             <motion.div onClick={() => setShowVisitModal(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
             <motion.div className="relative bg-white w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl">
                <h3 className="text-2xl font-black mb-6">Apto {activeApartment}</h3>
-               <div className="grid grid-cols-2 gap-4 mb-6">
+               <div className="grid grid-cols-2 gap-3 mb-6">
                   <button onClick={() => setVisitContacted(true)} className={cn("py-4 rounded-2xl font-black transition-all", visitContacted ? 'bg-green-100 text-green-700 ring-2 ring-green-500' : 'bg-slate-50 text-slate-400')}>SIM</button>
                   <button onClick={() => setVisitContacted(false)} className={cn("py-4 rounded-2xl font-black transition-all", !visitContacted ? 'bg-red-100 text-red-700 ring-2 ring-red-500' : 'bg-slate-50 text-slate-400')}>NÃO</button>
                </div>
