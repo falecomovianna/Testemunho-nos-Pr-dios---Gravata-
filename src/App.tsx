@@ -646,6 +646,8 @@ Não Trabalhados:     ${notWorked}
     const matchesName = b.name ? b.name.toLowerCase().includes(term) : false;
     return matchesNumber || matchesAddress || matchesName;
   });
+    return matchesNumber || matchesAddress || matchesName;
+  });
   });
 
   if (isLoading) {
