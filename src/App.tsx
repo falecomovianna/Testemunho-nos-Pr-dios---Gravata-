@@ -540,12 +540,26 @@ Não Trabalhados:     ${notWorked}
       const visitRef = doc(db, `buildings/${selectedBuilding.id}/visits`, visitId);
       await deleteDoc(visitRef);
 
-      // Decrement visitCount to keep stats in sync
-      const buildingRef = doc(db, 'buildings', selectedBuilding.id);
-      await updateDoc(buildingRef, {
-  visitCount: increment(-1),
-  isCompleted: false
-});
+      // Recalcular stats reais após deletar
+        const visitsSnap = await getDocs(
+          collection(db, `buildings/${selectedBuilding.id}/visits`)
+        );
+        const remainingVisits = visitsSnap.docs.map(d => d.data());
+        const visitedApts = new Set(remainingVisits.map((v: any) => v.apartment));
+        const isCompleted =
+          selectedBuilding.apartments.length > 0 &&
+          selectedBuilding.apartments.every((apt: string) => visitedApts.has(apt));
+        const lastVisit = remainingVisits.length > 0
+          ? remainingVisits.sort((a: any, b: any) =>
+              (b.date?.toDate?.() || 0) - (a.date?.toDate?.() || 0)
+            )[0].date
+          : null;
+        const buildingRef = doc(db, 'buildings', selectedBuilding.id);
+        await updateDoc(buildingRef, {
+          visitCount: visitsSnap.size,
+          isCompleted: isCompleted,
+          lastVisitDate: lastVisit
+        });
       
       setShowVisitModal(false);
       setEditingVisitId(null);
