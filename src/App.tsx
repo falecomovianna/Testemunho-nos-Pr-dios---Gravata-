@@ -137,7 +137,10 @@ export default function App() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() } as Building))
-        .sort((a, b) => a.buildingNumber.localeCompare(b.buildingNumber, undefined, { numeric: true, sensitivity: 'base' }));
+        .sort((a, b) => {
+          // Ordenação natural que respeita o seu número original
+          return a.buildingNumber.localeCompare(b.buildingNumber, undefined, { numeric: true, sensitivity: 'base' });
+        });
       setBuildings(data);
       setIsLoading(false);
     });
@@ -163,7 +166,6 @@ export default function App() {
 
         const visitedApts = new Set(data.map(v => v.apartment));
         const totalApts = currentBuilding.apartments.length;
-        // CORREÇÃO: Só completa se total de aptos for maior que zero
         const isCompleted = totalApts > 0 && currentBuilding.apartments.every(apt => visitedApts.has(apt));
 
         if (currentBuilding.visitCount !== snapshot.size || currentBuilding.isCompleted !== isCompleted) {
@@ -384,7 +386,6 @@ export default function App() {
       const batch = writeBatch(db);
       aptVisits.forEach(v => batch.delete(doc(db, `buildings/${selectedBuilding.id}/visits`, v.id)));
       await batch.commit();
-      // Update building stats locally
       await updateDoc(doc(db, 'buildings', selectedBuilding.id), { visitCount: increment(-aptVisits.length) });
     } catch (error) { alert("Erro ao limpar registros."); } finally { setIsSavingVisit(false); }
   };
@@ -425,12 +426,12 @@ export default function App() {
 
     if (!searchTerm.trim()) return true;
     const term = searchTerm.trim().toLowerCase();
-    const isNumeric = /^\d+$/.test(term);
-    const normalizedBuilding = b.buildingNumber.replace(/^0+/, '') || '0';
-    const normalizedTerm = term.replace(/^0+/, '') || '0';
-    const matchesNumber = isNumeric ? normalizedBuilding === normalizedTerm : false;
+    
+    // CORREÇÃO DA LUPINHA: Busca direta no número original e no endereço
+    const matchesNumber = b.buildingNumber.toLowerCase().includes(term);
     const matchesAddress = b.address.toLowerCase().includes(term);
     const matchesName = b.name ? b.name.toLowerCase().includes(term) : false;
+    
     return matchesNumber || matchesAddress || matchesName;
   });
 
@@ -449,7 +450,7 @@ export default function App() {
              <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white"><Building2 className="w-6 h-6" /></div>
              <div>
                 <h1 className="font-bold text-lg text-slate-900">{view === 'list' ? 'Testemunhos nos Prédios' : selectedBuilding?.name || 'Detalhes'}</h1>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-1">Meus Prédios e Territórios</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Meus Prédios e Territórios</p>
              </div>
           </div>
         </div>
@@ -498,7 +499,7 @@ export default function App() {
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} key={b.id} onClick={() => { setSelectedBuilding(b); setView('building'); }} className="bg-white p-4 rounded-2xl border flex items-center justify-between cursor-pointer hover:border-blue-200 shadow-sm transition-all group">
                   <div className="flex-1 min-w-0 pr-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="px-3 py-1 bg-blue-600 text-white text-[10px] rounded-lg font-black uppercase">Nº {b.buildingNumber}</span>
+                      <span className="px-3 py-1 bg-blue-600 text-white text-[10px] rounded-lg font-black uppercase">Prédio: {b.buildingNumber}</span>
                       {b.isCompleted && b.apartments.length > 0 && <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-[10px] rounded-lg font-black uppercase flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Concluído</span>}
                     </div>
                     <h3 className="font-bold text-slate-900 truncate group-hover:text-blue-600 transition-colors">{b.name || 'Sem nome'}</h3>
@@ -560,7 +561,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* VOLTOU: TABELA DE HISTÓRICO COM EDIÇÃO */}
             <div className="space-y-4">
                <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2 px-1"><span className="w-1 h-4 bg-slate-900 rounded-full" /> Histórico de Visitas</h4>
                <div className="bg-white rounded-3xl border overflow-hidden shadow-sm">
