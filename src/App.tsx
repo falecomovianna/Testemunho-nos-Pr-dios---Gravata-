@@ -163,7 +163,7 @@ export default function App() {
 
         const visitedApts = new Set(data.map(v => v.apartment));
         const totalApts = currentBuilding.apartments.length;
-        // CORREÇÃO CLAUDE: Se totalApts é 0, nunca marca como completo
+        // CORREÇÃO: Só completa se total de aptos for maior que zero
         const isCompleted = totalApts > 0 && currentBuilding.apartments.every(apt => visitedApts.has(apt));
 
         if (currentBuilding.visitCount !== snapshot.size || currentBuilding.isCompleted !== isCompleted) {
@@ -297,7 +297,6 @@ export default function App() {
     setReportPassword('');
     try {
       const total = buildings.length;
-      // REGRA CLAUDE: Concluído precisa ter mais que 0 aptos
       const completed = buildings.filter(b => b.isCompleted && b.apartments.length > 0).length;
       const notWorked = buildings.filter(b => !b.visitCount || b.visitCount === 0).length;
       const started = buildings.filter(b => (b.visitCount ?? 0) > 0 && !b.isCompleted).length;
@@ -321,7 +320,6 @@ export default function App() {
         const visitsSnap = await getDocs(collection(db, `buildings/${b.id}/visits`));
         const visitsData = visitsSnap.docs.map(d => d.data());
         const visitedApts = new Set(visitsData.map(v => v.apartment));
-        // REGRA CLAUDE: Validar tamanho do array
         const isCompleted = b.apartments && b.apartments.length > 0 && b.apartments.every(apt => visitedApts.has(apt));
         
         if (b.visitCount !== visitsSnap.size || b.isCompleted !== isCompleted) {
@@ -360,7 +358,7 @@ export default function App() {
       setShowVisitModal(false);
       setVisitNotes('');
     } catch (error) {
-      alert("Erro ao salvar.");
+      alert("Erro ao salvar visita.");
     } finally {
       setIsSavingVisit(false);
     }
@@ -377,6 +375,20 @@ export default function App() {
     } catch (error) { alert("Erro ao excluir."); } finally { setIsSavingVisit(false); }
   };
 
+  const handleDeleteAllAptVisits = async (aptNumber: string, skipConfirm = false) => {
+    if (!selectedBuilding) return;
+    if (!skipConfirm) { setItemToDelete({ type: 'apartment', id: aptNumber }); return; }
+    setIsSavingVisit(true);
+    try {
+      const aptVisits = visits.filter(v => v.apartment === aptNumber);
+      const batch = writeBatch(db);
+      aptVisits.forEach(v => batch.delete(doc(db, `buildings/${selectedBuilding.id}/visits`, v.id)));
+      await batch.commit();
+      // Update building stats locally
+      await updateDoc(doc(db, 'buildings', selectedBuilding.id), { visitCount: increment(-aptVisits.length) });
+    } catch (error) { alert("Erro ao limpar registros."); } finally { setIsSavingVisit(false); }
+  };
+
   const handleDeleteBuilding = async (buildingId: string, skipConfirm = false) => {
     if (!skipConfirm) { setItemToDelete({ type: 'building', id: buildingId }); return; }
     setIsUpdatingBuilding(true);
@@ -387,10 +399,9 @@ export default function App() {
       batch.delete(doc(db, 'buildings', buildingId));
       await batch.commit();
       setView('list'); setSelectedBuilding(null);
-    } catch (error) { alert("Erro ao excluir."); } finally { setIsUpdatingBuilding(false); }
+    } catch (error) { alert("Erro ao excluir prédio."); } finally { setIsUpdatingBuilding(false); }
   };
 
-  // GPS ORIGINAL VOLTOU AQUI:
   const openInMaps = (address: string) => {
     const encoded = encodeURIComponent(address);
     window.open(`https://www.google.com/maps/search/?api=1&query=${encoded}`, '_blank');
@@ -399,7 +410,6 @@ export default function App() {
   const stats = {
     total: buildings.length,
     started: buildings.filter(b => (b.visitCount || 0) > 0 && !b.isCompleted).length,
-    // REGRA CLAUDE: Concluído trava no 0
     completed: buildings.filter(b => b.isCompleted && b.apartments && b.apartments.length > 0).length,
     pending: buildings.filter(b => (b.visitCount || 0) === 0 && !b.isCompleted).length
   };
@@ -424,7 +434,7 @@ export default function App() {
     return matchesNumber || matchesAddress || matchesName;
   });
 
-  if (isLoading) return <div className="flex items-center justify-center h-screen"><Loader2 className="animate-spin text-blue-600" /></div>;
+  if (isLoading) return <div className="flex items-center justify-center h-screen bg-slate-50"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>;
 
   return (
     <div className="min-h-screen bg-slate-100 pb-20 font-sans">
@@ -439,7 +449,7 @@ export default function App() {
              <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white"><Building2 className="w-6 h-6" /></div>
              <div>
                 <h1 className="font-bold text-lg text-slate-900">{view === 'list' ? 'Testemunhos nos Prédios' : selectedBuilding?.name || 'Detalhes'}</h1>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Meus Prédios e Territórios</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-1">Meus Prédios e Territórios</p>
              </div>
           </div>
         </div>
@@ -485,13 +495,13 @@ export default function App() {
 
             <div className="grid gap-3">
               {filteredBuildings.map(b => (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} key={b.id} onClick={() => { setSelectedBuilding(b); setView('building'); }} className="bg-white p-4 rounded-2xl border flex items-center justify-between cursor-pointer hover:border-blue-200 shadow-sm transition-all">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} key={b.id} onClick={() => { setSelectedBuilding(b); setView('building'); }} className="bg-white p-4 rounded-2xl border flex items-center justify-between cursor-pointer hover:border-blue-200 shadow-sm transition-all group">
                   <div className="flex-1 min-w-0 pr-4">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="px-3 py-1 bg-blue-600 text-white text-[10px] rounded-lg font-black uppercase">Nº {b.buildingNumber}</span>
                       {b.isCompleted && b.apartments.length > 0 && <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-[10px] rounded-lg font-black uppercase flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Concluído</span>}
                     </div>
-                    <h3 className="font-bold text-slate-900 truncate">{b.name || 'Sem nome'}</h3>
+                    <h3 className="font-bold text-slate-900 truncate group-hover:text-blue-600 transition-colors">{b.name || 'Sem nome'}</h3>
                     <p className="text-xs text-slate-500 truncate mt-1 flex items-center gap-1"><MapPin className="w-3 h-3" /> {b.address}</p>
                   </div>
                   <ChevronRight className="w-5 h-5 text-slate-300" />
@@ -519,7 +529,7 @@ export default function App() {
               </div>
               <div className="p-6">
                  <p className="text-slate-900 font-bold text-lg leading-tight">{selectedBuilding.address}</p>
-                 <p className="text-blue-600 font-medium text-sm mt-1">{selectedBuilding.name}</p>
+                 {selectedBuilding.name && <p className="text-blue-600 font-medium text-sm mt-1">{selectedBuilding.name}</p>}
               </div>
             </div>
 
@@ -535,12 +545,12 @@ export default function App() {
             </div>
 
             <div className="space-y-6">
-              <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2"><span className="w-1 h-4 bg-blue-600 rounded-full" /> Registrar Visita</h4>
+              <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2 px-1"><span className="w-1 h-4 bg-blue-600 rounded-full" /> Registrar Visita</h4>
               <div className="grid grid-cols-4 gap-3">
                 {selectedBuilding.apartments.map(apt => {
                   const lastVisit = visits.find(v => v.apartment === apt);
                   return (
-                    <button key={apt} onClick={() => { setActiveApartment(apt); if (lastVisit) { setVisitContacted(lastVisit.contacted); setVisitNotes(lastVisit.notes || ''); setEditingVisitId(lastVisit.id); } else { setVisitContacted(true); setVisitNotes(''); setEditingVisitId(null); } setShowVisitModal(true); }} className={cn("p-4 py-6 rounded-2xl border-2 flex flex-col items-center min-h-[100px]", lastVisit ? (lastVisit.contacted ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700') : 'bg-white border-white text-slate-600 shadow-sm')}>
+                    <button key={apt} onClick={() => { setActiveApartment(apt); if (lastVisit) { setVisitContacted(lastVisit.contacted); setVisitNotes(lastVisit.notes || ''); setEditingVisitId(lastVisit.id); } else { setVisitContacted(true); setVisitNotes(''); setEditingVisitId(null); } setShowVisitModal(true); }} className={cn("p-4 py-6 rounded-2xl border-2 flex flex-col items-center transition-all min-h-[100px]", lastVisit ? (lastVisit.contacted ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700') : 'bg-white border-white text-slate-600 shadow-sm')}>
                       <span className="text-xl font-black tracking-tighter">{apt}</span>
                       {lastVisit && <span className="text-[8px] font-black uppercase mt-2">{lastVisit.contacted ? 'SIM' : 'NÃO'}</span>}
                     </button>
@@ -548,6 +558,45 @@ export default function App() {
                 })}
                 <button onClick={() => setShowAddAptModal(true)} className="p-4 py-6 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center text-slate-400 hover:bg-blue-50 transition-all"><Plus className="w-6 h-6 mb-1" /><span className="text-[10px] font-black uppercase">Novo</span></button>
               </div>
+            </div>
+
+            {/* VOLTOU: TABELA DE HISTÓRICO COM EDIÇÃO */}
+            <div className="space-y-4">
+               <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2 px-1"><span className="w-1 h-4 bg-slate-900 rounded-full" /> Histórico de Visitas</h4>
+               <div className="bg-white rounded-3xl border overflow-hidden shadow-sm">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 border-b">
+                      <tr>
+                        <th className="p-4 font-bold text-slate-400 uppercase">Apto</th>
+                        <th className="p-4 font-bold text-slate-400 uppercase">Data</th>
+                        <th className="p-4 font-bold text-slate-400 uppercase text-center">Status</th>
+                        <th className="p-4 font-bold text-slate-400 uppercase text-right">Ação</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {visits.length === 0 ? <tr><td colSpan={4} className="p-8 text-center text-slate-300 italic">Nenhuma visita ainda</td></tr> : visits.map(v => (
+                        <tr key={v.id} className="hover:bg-slate-50">
+                          <td className="p-4 font-black text-slate-900">
+                             <div className="flex items-center gap-2">
+                               {v.apartment}
+                               <button onClick={() => handleDeleteAllAptVisits(v.apartment)} className="p-1 text-red-400"><Trash2 className="w-3 h-3"/></button>
+                             </div>
+                          </td>
+                          <td className="p-4 text-slate-500">{formatDate(v.date?.toDate() || new Date())}</td>
+                          <td className="p-4 text-center">
+                            {v.contacted ? <CheckCircle2 className="w-4 h-4 text-green-500 mx-auto"/> : <XCircle className="w-4 h-4 text-red-500 mx-auto"/>}
+                          </td>
+                          <td className="p-4 text-right">
+                             <div className="flex justify-end gap-1">
+                               <button onClick={() => { setActiveApartment(v.apartment); setVisitContacted(v.contacted); setVisitNotes(v.notes || ''); setEditingVisitId(v.id); setShowVisitModal(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"><Edit className="w-4 h-4"/></button>
+                               <button onClick={() => handleDeleteVisit(v.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4"/></button>
+                             </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+               </div>
             </div>
           </div>
         )}
@@ -574,8 +623,8 @@ export default function App() {
 
         {showVisitModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowVisitModal(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
-            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="relative bg-white w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl">
+            <motion.div onClick={() => setShowVisitModal(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
+            <motion.div className="relative bg-white w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl">
                <h3 className="text-2xl font-black mb-6">Apto {activeApartment}</h3>
                <div className="grid grid-cols-2 gap-4 mb-6">
                   <button onClick={() => setVisitContacted(true)} className={cn("py-4 rounded-2xl font-black transition-all", visitContacted ? 'bg-green-100 text-green-700 ring-2 ring-green-500' : 'bg-slate-50 text-slate-400')}>SIM</button>
@@ -612,6 +661,22 @@ export default function App() {
           </div>
         )}
 
+        {showEditBuildingModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div onClick={() => setShowEditBuildingModal(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl">
+              <h3 className="text-xl font-black text-slate-900 mb-6">Editar Prédio</h3>
+              <div className="space-y-4">
+                <input type="text" value={editBuildingForm.buildingNumber} onChange={(e) => setEditBuildingForm({...editBuildingForm, buildingNumber: e.target.value})} placeholder="Número" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none"/>
+                <input type="text" value={editBuildingForm.name} onChange={(e) => setEditBuildingForm({...editBuildingForm, name: e.target.value})} placeholder="Nome (Opcional)" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none"/>
+                <textarea value={editBuildingForm.address} onChange={(e) => setEditBuildingForm({...editBuildingForm, address: e.target.value})} placeholder="Endereço" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none"/>
+                <input type="number" value={editBuildingForm.apartmentsCount} onChange={(e) => setEditBuildingForm({...editBuildingForm, apartmentsCount: e.target.value})} placeholder="Qtd de Aptos" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none"/>
+              </div>
+              <button onClick={handleSaveBuildingEdit} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black mt-6">Salvar</button>
+            </motion.div>
+          </div>
+        )}
+
         {itemToDelete && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
             <div onClick={() => setItemToDelete(null)} className="absolute inset-0 bg-slate-900/60" />
@@ -620,7 +685,7 @@ export default function App() {
               <h3 className="text-xl font-black">Excluir?</h3>
               <p className="text-sm text-slate-500 my-4">Ação permanente.</p>
               <div className="flex flex-col gap-3">
-                <button onClick={() => { if (itemToDelete.type === 'building') handleDeleteBuilding(itemToDelete.id, true); if(itemToDelete.type === 'visit') handleDeleteVisit(itemToDelete.id, true); setItemToDelete(null); }} className="w-full py-4 bg-red-500 text-white rounded-2xl font-black">SIM, APAGAR</button>
+                <button onClick={() => { if (itemToDelete.type === 'building') handleDeleteBuilding(itemToDelete.id, true); if(itemToDelete.type === 'visit') handleDeleteVisit(itemToDelete.id, true); if(itemToDelete.type === 'apartment') handleDeleteAllAptVisits(itemToDelete.id, true); setItemToDelete(null); }} className="w-full py-4 bg-red-500 text-white rounded-2xl font-black">SIM, APAGAR</button>
                 <button onClick={() => setItemToDelete(null)} className="w-full py-2 text-slate-400 font-bold uppercase text-[10px]">Cancelar</button>
               </div>
             </motion.div>
