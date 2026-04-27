@@ -913,15 +913,16 @@ Não Trabalhados:     ${notWorked}
               <div className="bg-slate-900 px-6 py-4 flex items-center justify-between">
                  <div className="flex gap-4">
                     <div>
-                      <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-1">Prédio</p>
-                      <p className="text-white font-black text-xl">{selectedBuilding.buildingNumber}</p>
-                    </div>
-                 </div>
-                 <div className="flex items-center gap-2">
-                   <button 
-                    onClick={() => {
-                      setEditBuildingForm({
-                        name: selectedBuilding.name || '',
+  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-1">Prédio</p>
+  <div className="flex items-center gap-3">
+    <p className="text-white font-black text-xl">{selectedBuilding.buildingNumber}</p>
+    {selectedBuilding.underConstruction && (
+      <span className="px-3 py-1 bg-yellow-400 text-yellow-900 text-[10px] font-black uppercase tracking-widest rounded-full flex items-center gap-1 shadow-lg">
+        🚧 Em Construção
+      </span>
+    )}
+  </div>
+</div>
                         buildingNumber: selectedBuilding.buildingNumber || '',
                         address: selectedBuilding.address || '',
                         apartmentsCount: selectedBuilding.apartmentsCount || ''
