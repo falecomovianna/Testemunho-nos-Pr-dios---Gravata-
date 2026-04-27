@@ -543,8 +543,9 @@ Não Trabalhados:     ${notWorked}
       // Decrement visitCount to keep stats in sync
       const buildingRef = doc(db, 'buildings', selectedBuilding.id);
       await updateDoc(buildingRef, {
-        visitCount: increment(-1)
-      });
+  visitCount: increment(-1),
+  isCompleted: false
+});
       
       setShowVisitModal(false);
       setEditingVisitId(null);
