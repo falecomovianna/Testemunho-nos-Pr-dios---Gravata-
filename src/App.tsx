@@ -229,8 +229,7 @@ export default function App() {
         if (!currentBuilding) return prevBuildings;
 
         const visitedApts = new Set(data.map(v => v.apartment));
-       const isCompleted = currentBuilding.apartments.length > 0 && currentBuilding.apartments.every(apt => visitedApts.has(apt)) && new Set(data.map(v => v.apartment)).size > 0;
-
+      const isCompleted = currentBuilding.apartments.length > 0 && currentBuilding.apartments.every(apt => visitedApts.has(apt)) && visitedApts.size > 0;
         if (currentBuilding.visitCount !== snapshot.size || currentBuilding.isCompleted !== isCompleted) {
           const buildingRef = doc(db, 'buildings', buildingId);
           updateDoc(buildingRef, {
