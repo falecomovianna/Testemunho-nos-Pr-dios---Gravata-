@@ -14,6 +14,7 @@ export interface Building {
   lastVisitDate?: any;
   isCompleted?: boolean;
   facadeImageUrl?: string;
+  underConstruction?: boolean;
   createdAt: any;
 }
 
@@ -21,7 +22,7 @@ export interface Visit {
   id: string;
   buildingId: string;
   apartment: string;
-  date: any; // Firestore Timestamp
+  date: any;
   contacted: boolean;
   notes?: string;
   visitorId: string;
