@@ -163,7 +163,7 @@ export default function App() {
 
         const visitedApts = new Set(data.map(v => v.apartment));
         const totalApts = currentBuilding.apartments.length;
-        // CORREÇÃO CLAUDE: Prédio vazio não pode ser isCompleted
+        // CORREÇÃO CLAUDE: Se totalApts é 0, nunca marca como completo
         const isCompleted = totalApts > 0 && currentBuilding.apartments.every(apt => visitedApts.has(apt));
 
         if (currentBuilding.visitCount !== snapshot.size || currentBuilding.isCompleted !== isCompleted) {
@@ -297,7 +297,7 @@ export default function App() {
     setReportPassword('');
     try {
       const total = buildings.length;
-      // Sincronizado com Regra Claude
+      // REGRA CLAUDE: Concluído precisa ter mais que 0 aptos
       const completed = buildings.filter(b => b.isCompleted && b.apartments.length > 0).length;
       const notWorked = buildings.filter(b => !b.visitCount || b.visitCount === 0).length;
       const started = buildings.filter(b => (b.visitCount ?? 0) > 0 && !b.isCompleted).length;
@@ -321,7 +321,7 @@ export default function App() {
         const visitsSnap = await getDocs(collection(db, `buildings/${b.id}/visits`));
         const visitsData = visitsSnap.docs.map(d => d.data());
         const visitedApts = new Set(visitsData.map(v => v.apartment));
-        // CORREÇÃO CLAUDE: Valida se b.apartments existe e tem tamanho > 0
+        // REGRA CLAUDE: Validar tamanho do array
         const isCompleted = b.apartments && b.apartments.length > 0 && b.apartments.every(apt => visitedApts.has(apt));
         
         if (b.visitCount !== visitsSnap.size || b.isCompleted !== isCompleted) {
@@ -331,9 +331,9 @@ export default function App() {
           });
         }
       }));
-      alert("Estatísticas sincronizadas!");
+      alert("Sincronizado!");
     } catch (error) {
-      alert("Erro na sincronização.");
+      alert("Erro no sync.");
     } finally {
       setIsSyncingStats(false);
     }
@@ -360,7 +360,7 @@ export default function App() {
       setShowVisitModal(false);
       setVisitNotes('');
     } catch (error) {
-      alert("Erro ao salvar visita.");
+      alert("Erro ao salvar.");
     } finally {
       setIsSavingVisit(false);
     }
@@ -387,17 +387,19 @@ export default function App() {
       batch.delete(doc(db, 'buildings', buildingId));
       await batch.commit();
       setView('list'); setSelectedBuilding(null);
-    } catch (error) { alert("Erro ao excluir prédio."); } finally { setIsUpdatingBuilding(false); }
+    } catch (error) { alert("Erro ao excluir."); } finally { setIsUpdatingBuilding(false); }
   };
 
+  // GPS ORIGINAL VOLTOU AQUI:
   const openInMaps = (address: string) => {
-    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
+    const encoded = encodeURIComponent(address);
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encoded}`, '_blank');
   };
 
   const stats = {
     total: buildings.length,
     started: buildings.filter(b => (b.visitCount || 0) > 0 && !b.isCompleted).length,
-    // CORREÇÃO CLAUDE: Card de Concluídos agora trava prédios vazios
+    // REGRA CLAUDE: Concluído trava no 0
     completed: buildings.filter(b => b.isCompleted && b.apartments && b.apartments.length > 0).length,
     pending: buildings.filter(b => (b.visitCount || 0) === 0 && !b.isCompleted).length
   };
@@ -405,7 +407,6 @@ export default function App() {
   const filteredBuildings = buildings.filter(b => {
     const totalApts = b.apartments?.length || 0;
     const visitsDone = b.visitCount || 0;
-    // CORREÇÃO CLAUDE: isActuallyCompleted valida se tem portas
     const isActuallyCompleted = b.isCompleted && totalApts > 0;
 
     if (activeFilter === 'started' && (visitsDone === 0 || isActuallyCompleted)) return false;
@@ -423,7 +424,7 @@ export default function App() {
     return matchesNumber || matchesAddress || matchesName;
   });
 
-  if (isLoading) return <div className="flex items-center justify-center h-screen bg-slate-50"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>;
+  if (isLoading) return <div className="flex items-center justify-center h-screen"><Loader2 className="animate-spin text-blue-600" /></div>;
 
   return (
     <div className="min-h-screen bg-slate-100 pb-20 font-sans">
@@ -448,13 +449,13 @@ export default function App() {
         {view === 'list' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center px-1">
-               <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Prédios <span className="ml-2 text-slate-300">({filteredBuildings.length})</span></h2>
+               <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Prédios ({filteredBuildings.length})</h2>
                <button onClick={() => setShowPasswordModal(true)} className="flex items-center gap-2 text-xs font-bold text-blue-600"><FileDown className="w-4 h-4" /> Relatório</button>
             </div>
 
             <div className="relative group">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input type="text" placeholder="Buscar prédio ou endereço..." className="w-full pl-11 pr-4 py-3 bg-white border rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+              <input type="text" placeholder="Buscar prédio..." className="w-full pl-11 pr-4 py-3 bg-white border rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
 
             <div className="space-y-2">
@@ -463,37 +464,37 @@ export default function App() {
                  <button onClick={syncAllBuildingStats} disabled={isSyncingStats} className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 hover:text-blue-600"><RefreshCw className={cn("w-3 h-3", isSyncingStats && "animate-spin")} /> Sincronizar</button>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setActiveFilter('all')} className={cn("p-4 rounded-3xl border transition-all", activeFilter === 'all' ? "bg-slate-900 text-white" : "bg-white text-slate-900")}>
+                <button onClick={() => setActiveFilter('all')} className={cn("p-4 rounded-3xl border", activeFilter === 'all' ? "bg-slate-900 text-white" : "bg-white text-slate-900")}>
                   <span className="block text-2xl font-black">{stats.total}</span>
-                  <span className="text-[8px] font-bold uppercase opacity-60">Total Prédios</span>
+                  <span className="text-[8px] font-bold uppercase opacity-60">Total</span>
                 </button>
-                <button onClick={() => setActiveFilter('started')} className={cn("p-4 rounded-3xl border transition-all", activeFilter === 'started' ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-700")}>
+                <button onClick={() => setActiveFilter('started')} className={cn("p-4 rounded-3xl border", activeFilter === 'started' ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-700")}>
                   <span className="block text-2xl font-black">{stats.started}</span>
                   <span className="text-[8px] font-bold uppercase opacity-60">Iniciados</span>
                 </button>
-                <button onClick={() => setActiveFilter('completed')} className={cn("p-4 rounded-3xl border transition-all", activeFilter === 'completed' ? "bg-emerald-600 text-white" : "bg-emerald-50 text-emerald-700")}>
+                <button onClick={() => setActiveFilter('completed')} className={cn("p-4 rounded-3xl border", activeFilter === 'completed' ? "bg-emerald-600 text-white" : "bg-emerald-50 text-emerald-700")}>
                   <span className="block text-2xl font-black">{stats.completed}</span>
                   <span className="text-[8px] font-bold uppercase opacity-60">Concluídos</span>
                 </button>
-                <button onClick={() => setActiveFilter('pending')} className={cn("p-4 rounded-3xl border transition-all", activeFilter === 'pending' ? "bg-amber-500 text-white" : "bg-white text-slate-500")}>
+                <button onClick={() => setActiveFilter('pending')} className={cn("p-4 rounded-3xl border", activeFilter === 'pending' ? "bg-amber-500 text-white" : "bg-white text-slate-500")}>
                   <span className="block text-2xl font-black">{stats.pending}</span>
-                  <span className="text-[8px] font-bold uppercase opacity-60">Não trabalhado</span>
+                  <span className="text-[8px] font-bold uppercase opacity-60">Pendente</span>
                 </button>
               </div>
             </div>
 
             <div className="grid gap-3">
               {filteredBuildings.map(b => (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} key={b.id} onClick={() => { setSelectedBuilding(b); setView('building'); }} className="bg-white p-4 rounded-2xl border flex items-center justify-between cursor-pointer hover:border-blue-200 shadow-sm transition-all group">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} key={b.id} onClick={() => { setSelectedBuilding(b); setView('building'); }} className="bg-white p-4 rounded-2xl border flex items-center justify-between cursor-pointer hover:border-blue-200 shadow-sm transition-all">
                   <div className="flex-1 min-w-0 pr-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="px-3 py-1 bg-blue-600 text-white text-xs rounded-lg font-black uppercase">Prédio: {parseInt(b.buildingNumber)}</span>
+                      <span className="px-3 py-1 bg-blue-600 text-white text-[10px] rounded-lg font-black uppercase">Nº {b.buildingNumber}</span>
                       {b.isCompleted && b.apartments.length > 0 && <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-[10px] rounded-lg font-black uppercase flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Concluído</span>}
                     </div>
-                    <h3 className="font-bold text-slate-900 group-hover:text-blue-600">{b.name || 'Sem nome'}</h3>
+                    <h3 className="font-bold text-slate-900 truncate">{b.name || 'Sem nome'}</h3>
                     <p className="text-xs text-slate-500 truncate mt-1 flex items-center gap-1"><MapPin className="w-3 h-3" /> {b.address}</p>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-blue-500 transition-all" />
+                  <ChevronRight className="w-5 h-5 text-slate-300" />
                 </motion.div>
               ))}
             </div>
@@ -501,10 +502,10 @@ export default function App() {
         )}
 
         {view === 'building' && selectedBuilding && (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 pb-24">
+          <div className="space-y-6 pb-24">
             <div className="bg-white rounded-3xl border overflow-hidden shadow-xl">
               <div onClick={() => !selectedBuilding.facadeImageUrl && facadeInputRef.current?.click()} className="h-48 bg-slate-100 relative cursor-pointer">
-                {selectedBuilding.facadeImageUrl ? <img src={selectedBuilding.facadeImageUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 gap-2"><ImageIcon className="w-8 h-8 opacity-20" /><span className="text-[10px] font-bold uppercase opacity-50">Adicionar Foto</span></div>}
+                {selectedBuilding.facadeImageUrl ? <img src={selectedBuilding.facadeImageUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 gap-2"><ImageIcon className="w-8 h-8 opacity-20" /><span className="text-[10px] font-bold uppercase opacity-50">Foto</span></div>}
                 {isUpdatingBuilding && <div className="absolute inset-0 bg-white/60 flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" /></div>}
                 {selectedBuilding.isCompleted && selectedBuilding.apartments.length > 0 && <div className="absolute top-4 left-4"><span className="px-3 py-1.5 bg-emerald-500 text-white text-[10px] font-black uppercase rounded-full shadow-lg flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5" /> Concluído</span></div>}
               </div>
@@ -516,16 +517,15 @@ export default function App() {
                    <button onClick={() => openInMaps(selectedBuilding.address)} className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg shadow-blue-500/20"><Navigation className="w-4 h-4" /> GPS</button>
                  </div>
               </div>
-              <div className="p-6 bg-slate-50/50">
-                 <p className="text-[10px] font-bold text-slate-400 mb-1 uppercase">Endereço</p>
+              <div className="p-6">
                  <p className="text-slate-900 font-bold text-lg leading-tight">{selectedBuilding.address}</p>
-                 {selectedBuilding.name && <p className="font-medium mt-1 text-blue-600">{selectedBuilding.name}</p>}
+                 <p className="text-blue-600 font-medium text-sm mt-1">{selectedBuilding.name}</p>
               </div>
             </div>
 
-            <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
-                <h4 className="text-xs font-bold opacity-50 uppercase tracking-widest mb-6">Resumo da Cobertura</h4>
-                <div className="flex justify-between text-center relative z-10">
+            <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden text-center">
+                <h4 className="text-xs font-bold opacity-50 uppercase mb-6">Cobertura</h4>
+                <div className="flex justify-between relative z-10">
                   <div><span className="block text-3xl font-black italic">{new Set(visits.map(v => v.apartment)).size}</span><span className="text-[8px] font-bold opacity-60">VISITADOS</span></div>
                   <div className="w-px h-10 bg-white/10" />
                   <div><span className="block text-3xl font-black italic">{Math.max(0, parseInt(selectedBuilding.apartmentsCount || '0') - new Set(visits.map(v => v.apartment)).size)}</span><span className="text-[8px] font-bold opacity-60">FALTAM</span></div>
@@ -540,8 +540,8 @@ export default function App() {
                 {selectedBuilding.apartments.map(apt => {
                   const lastVisit = visits.find(v => v.apartment === apt);
                   return (
-                    <button key={apt} onClick={() => { setActiveApartment(apt); if (lastVisit) { setVisitContacted(lastVisit.contacted); setVisitNotes(lastVisit.notes || ''); setEditingVisitId(lastVisit.id); } else { setVisitContacted(true); setVisitNotes(''); setEditingVisitId(null); } setShowVisitModal(true); }} className={cn("p-4 py-6 rounded-2xl border-2 flex flex-col items-center transition-all min-h-[100px]", lastVisit ? (lastVisit.contacted ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700') : 'bg-white border-white text-slate-600 shadow-sm')}>
-                      <span className="text-xl font-black">{apt}</span>
+                    <button key={apt} onClick={() => { setActiveApartment(apt); if (lastVisit) { setVisitContacted(lastVisit.contacted); setVisitNotes(lastVisit.notes || ''); setEditingVisitId(lastVisit.id); } else { setVisitContacted(true); setVisitNotes(''); setEditingVisitId(null); } setShowVisitModal(true); }} className={cn("p-4 py-6 rounded-2xl border-2 flex flex-col items-center min-h-[100px]", lastVisit ? (lastVisit.contacted ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700') : 'bg-white border-white text-slate-600 shadow-sm')}>
+                      <span className="text-xl font-black tracking-tighter">{apt}</span>
                       {lastVisit && <span className="text-[8px] font-black uppercase mt-2">{lastVisit.contacted ? 'SIM' : 'NÃO'}</span>}
                     </button>
                   );
@@ -554,7 +554,7 @@ export default function App() {
       </main>
 
       <div className="fixed bottom-6 right-6 z-40">
-        <button onClick={() => setShowManualModal(true)} className="bg-blue-600 text-white w-16 h-16 rounded-full shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all"><Plus className="w-8 h-8" /></button>
+        <button onClick={() => setShowManualModal(true)} className="bg-blue-600 text-white w-16 h-16 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all"><Plus className="w-8 h-8" /></button>
       </div>
 
       <input type="file" accept="image/*" className="hidden" ref={facadeInputRef} onChange={handleFacadeUpload} />
@@ -564,44 +564,40 @@ export default function App() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowManualModal(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
             <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="relative bg-white w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl">
-              <h3 className="text-2xl font-black mb-2">Cadastro Rápido</h3>
-              <p className="text-xs text-slate-400 font-bold uppercase mb-6 tracking-widest">Endereço e apartamentos</p>
-              <textarea value={manualText} onChange={(e) => setManualText(e.target.value)} placeholder="Ex: Rua Exemplo 123, 4 aptos: 101, 102, 201, 202..." className="w-full p-5 bg-slate-50 border-none rounded-3xl text-sm min-h-[160px] outline-none" />
-              <button onClick={handleTextUpload} disabled={isProcessingText || !manualText.trim()} className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-black text-lg mt-4 disabled:opacity-50 shadow-blue-500/20 shadow-xl">{isProcessingText ? <Loader2 className="animate-spin mx-auto" /> : "Processar e Cadastrar"}</button>
+               <h3 className="text-2xl font-black text-slate-900 mb-2">Novo Prédio</h3>
+               <p className="text-xs text-slate-400 uppercase tracking-widest font-bold mb-6">Cadastro Rápido</p>
+               <textarea value={manualText} onChange={(e) => setManualText(e.target.value)} placeholder="Ex: Rua Central 100, 4 aptos: 101, 102, 201, 202..." className="w-full p-5 bg-slate-50 border-none rounded-3xl text-sm min-h-[150px] outline-none" />
+               <button onClick={handleTextUpload} disabled={isProcessingText || !manualText.trim()} className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-black text-lg mt-6 shadow-xl shadow-blue-500/20 disabled:opacity-50">{isProcessingText ? <Loader2 className="animate-spin mx-auto" /> : "Cadastrar"}</button>
             </motion.div>
           </div>
         )}
 
         {showVisitModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div onClick={() => setShowVisitModal(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
-            <motion.div className="relative bg-white w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl">
-              <h3 className="text-2xl font-black mb-6">Apto {activeApartment}</h3>
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                <button onClick={() => setVisitContacted(true)} className={cn("py-4 rounded-2xl font-black", visitContacted ? "bg-green-100 text-green-700 ring-2 ring-green-500" : "bg-slate-50 text-slate-400")}>SIM</button>
-                <button onClick={() => setVisitContacted(false)} className={cn("py-4 rounded-2xl font-black", !visitContacted ? "bg-red-100 text-red-700 ring-2 ring-red-500" : "bg-slate-50 text-slate-400")}>NÃO</button>
-              </div>
-              <textarea value={visitNotes} onChange={(e) => setVisitNotes(e.target.value)} placeholder="Observações importantes..." className="w-full p-5 bg-slate-50 rounded-3xl min-h-[120px] outline-none mb-6" />
-              <button onClick={handleSaveVisit} disabled={isSavingVisit} className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black text-lg shadow-xl shadow-slate-900/20">{isSavingVisit ? <Loader2 className="animate-spin mx-auto" /> : "Salvar Visita"}</button>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowVisitModal(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
+            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="relative bg-white w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl">
+               <h3 className="text-2xl font-black mb-6">Apto {activeApartment}</h3>
+               <div className="grid grid-cols-2 gap-4 mb-6">
+                  <button onClick={() => setVisitContacted(true)} className={cn("py-4 rounded-2xl font-black transition-all", visitContacted ? 'bg-green-100 text-green-700 ring-2 ring-green-500' : 'bg-slate-50 text-slate-400')}>SIM</button>
+                  <button onClick={() => setVisitContacted(false)} className={cn("py-4 rounded-2xl font-black transition-all", !visitContacted ? 'bg-red-100 text-red-700 ring-2 ring-red-500' : 'bg-slate-50 text-slate-400')}>NÃO</button>
+               </div>
+               <textarea value={visitNotes} onChange={(e) => setVisitNotes(e.target.value)} placeholder="Notas..." className="w-full p-5 bg-slate-50 rounded-3xl min-h-[120px] outline-none mb-6" />
+               <button onClick={handleSaveVisit} disabled={isSavingVisit} className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black shadow-xl">{isSavingVisit ? <Loader2 className="animate-spin mx-auto" /> : "Salvar Visita"}</button>
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
 
-      <AnimatePresence>
         {showPasswordModal && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
             <div onClick={() => setShowPasswordModal(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
             <motion.div className="relative bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl">
-              <h3 className="text-xl font-black text-center mb-6">Área Restrita</h3>
+              <h3 className="text-xl font-black text-center mb-6">Relatório</h3>
               <input type="password" value={reportPassword} onChange={(e) => setReportPassword(e.target.value)} placeholder="Senha" className="w-full p-5 bg-slate-50 rounded-2xl text-center text-2xl font-black outline-none mb-4" />
-              <button onClick={handleVerifyPasswordAndDownload} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black shadow-lg">Confirmar Senha</button>
+              <button onClick={handleVerifyPasswordAndDownload} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black shadow-lg">Confirmar</button>
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
 
-      <AnimatePresence>
         {showCropModal && (
           <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-md" />
@@ -615,18 +611,16 @@ export default function App() {
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
 
-      <AnimatePresence>
         {itemToDelete && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
             <div onClick={() => setItemToDelete(null)} className="absolute inset-0 bg-slate-900/60" />
             <motion.div className="relative bg-white w-full max-w-sm rounded-[2.5rem] p-8 text-center shadow-2xl">
               <Trash2 className="w-12 h-12 text-red-500 mx-auto mb-4" />
-              <h3 className="text-xl font-black">Confirmar Exclusão</h3>
-              <p className="text-sm text-slate-500 my-4">Esta ação é permanente e não pode ser desfeita.</p>
+              <h3 className="text-xl font-black">Excluir?</h3>
+              <p className="text-sm text-slate-500 my-4">Ação permanente.</p>
               <div className="flex flex-col gap-3">
-                <button onClick={() => { if (itemToDelete.type === 'building') handleDeleteBuilding(itemToDelete.id, true); if(itemToDelete.type === 'visit') handleDeleteVisit(itemToDelete.id, true); setItemToDelete(null); }} className="w-full py-4 bg-red-500 text-white rounded-2xl font-black shadow-red-500/30 shadow-lg">SIM, EXCLUIR</button>
+                <button onClick={() => { if (itemToDelete.type === 'building') handleDeleteBuilding(itemToDelete.id, true); if(itemToDelete.type === 'visit') handleDeleteVisit(itemToDelete.id, true); setItemToDelete(null); }} className="w-full py-4 bg-red-500 text-white rounded-2xl font-black">SIM, APAGAR</button>
                 <button onClick={() => setItemToDelete(null)} className="w-full py-2 text-slate-400 font-bold uppercase text-[10px]">Cancelar</button>
               </div>
             </motion.div>
