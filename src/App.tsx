@@ -137,10 +137,7 @@ export default function App() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() } as Building))
-        .sort((a, b) => {
-          // Ordenação natural que respeita o seu número original
-          return a.buildingNumber.localeCompare(b.buildingNumber, undefined, { numeric: true, sensitivity: 'base' });
-        });
+        .sort((a, b) => a.buildingNumber.localeCompare(b.buildingNumber, undefined, { numeric: true, sensitivity: 'base' }));
       setBuildings(data);
       setIsLoading(false);
     });
@@ -427,7 +424,7 @@ export default function App() {
     if (!searchTerm.trim()) return true;
     const term = searchTerm.trim().toLowerCase();
     
-    // CORREÇÃO DA LUPINHA: Busca direta no número original e no endereço
+    // CORREÇÃO: Busca direta e pura no número
     const matchesNumber = b.buildingNumber.toLowerCase().includes(term);
     const matchesAddress = b.address.toLowerCase().includes(term);
     const matchesName = b.name ? b.name.toLowerCase().includes(term) : false;
@@ -450,7 +447,7 @@ export default function App() {
              <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white"><Building2 className="w-6 h-6" /></div>
              <div>
                 <h1 className="font-bold text-lg text-slate-900">{view === 'list' ? 'Testemunhos nos Prédios' : selectedBuilding?.name || 'Detalhes'}</h1>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Meus Prédios e Territórios</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-1">Meus Prédios e Territórios</p>
              </div>
           </div>
         </div>
@@ -499,6 +496,7 @@ export default function App() {
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} key={b.id} onClick={() => { setSelectedBuilding(b); setView('building'); }} className="bg-white p-4 rounded-2xl border flex items-center justify-between cursor-pointer hover:border-blue-200 shadow-sm transition-all group">
                   <div className="flex-1 min-w-0 pr-4">
                     <div className="flex items-center gap-2 mb-2">
+                      {/* CORREÇÃO: Mostra o número puro como cadastrado */}
                       <span className="px-3 py-1 bg-blue-600 text-white text-[10px] rounded-lg font-black uppercase">Prédio: {b.buildingNumber}</span>
                       {b.isCompleted && b.apartments.length > 0 && <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-[10px] rounded-lg font-black uppercase flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Concluído</span>}
                     </div>
@@ -685,7 +683,7 @@ export default function App() {
               <h3 className="text-xl font-black">Excluir?</h3>
               <p className="text-sm text-slate-500 my-4">Ação permanente.</p>
               <div className="flex flex-col gap-3">
-                <button onClick={() => { if (itemToDelete.type === 'building') handleDeleteBuilding(itemToDelete.id, true); if(itemToDelete.type === 'visit') handleDeleteVisit(itemToDelete.id, true); if(itemToDelete.type === 'apartment') handleDeleteAllAptVisits(itemToDelete.id, true); setItemToDelete(null); }} className="w-full py-4 bg-red-500 text-white rounded-2xl font-black">SIM, APAGAR</button>
+                <button onClick={() => { if (itemToDelete.type === 'building') handleDeleteBuilding(itemToDelete.id, true); if(itemToDelete.type === 'visit') handleDeleteVisit(itemToDelete.id, true); if(itemToDelete.type === 'apartment') handleDeleteAllAptVisits(itemToDelete.id, true); setItemToDelete(null); }} className="w-full py-4 bg-red-500 text-white rounded-2xl font-black shadow-red-500/30 shadow-lg">SIM, APAGAR</button>
                 <button onClick={() => setItemToDelete(null)} className="w-full py-2 text-slate-400 font-bold uppercase text-[10px]">Cancelar</button>
               </div>
             </motion.div>
