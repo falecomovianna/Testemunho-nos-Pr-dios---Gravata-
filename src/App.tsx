@@ -760,7 +760,7 @@ return matchesNumber || matchesAddress || matchesName;
               >
                 <div className="flex items-center gap-2 mb-1">
                   <span className={cn("text-2xl font-black leading-none", activeFilter === 'started' ? "text-white" : "text-blue-700")}>
-                    {buildings.filter(b => (b.visitCount || 0) > 0).length}
+                    {buildings.filter(b => (b.visitCount || 0) > 0 && !b.isCompleted).length}
                   </span>
                 </div>
                 <span className={cn("text-[8px] font-bold uppercase tracking-widest", activeFilter === 'started' ? "text-white/60" : "text-blue-600/60")}>
