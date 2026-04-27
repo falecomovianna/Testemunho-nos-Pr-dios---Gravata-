@@ -631,8 +631,7 @@ Não Trabalhados:     ${notWorked}
     // Apply status filter
     if (activeFilter === 'started' && (!b.visitCount || b.visitCount === 0)) return false;
     if (activeFilter === 'pending' && (b.visitCount && b.visitCount > 0)) return false;
-    if (activeFilter === 'completed' && !b.isCompleted) return false;
-
+    if (activeFilter === 'completed' && (!b.isCompleted || !b.apartments || b.apartments.length === 0 || b.visitCount < b.apartments.length)) return false;
     // Apply search filter
     if (!searchTerm.trim()) return true;
     const term = searchTerm.trim().toLowerCase();
