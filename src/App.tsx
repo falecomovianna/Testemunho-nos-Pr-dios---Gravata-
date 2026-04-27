@@ -627,11 +627,11 @@ Não Trabalhados:     ${notWorked}
     window.open(`https://www.google.com/maps/search/?api=1&query=${encoded}`, '_blank');
   };
 
- const filteredBuildings = buildings.filter(b => {
+const filteredBuildings = buildings.filter(b => {
     // Apply status filter
     if (activeFilter === 'started' && (!b.visitCount || b.visitCount === 0 || b.isCompleted)) return false;
     if (activeFilter === 'pending' && (b.visitCount && b.visitCount > 0)) return false;
-    if (activeFilter === 'completed' && (!b.isCompleted || !b.apartments || b.apartments.length === 0 || b.visitCount < b.apartments.length)) return false;
+    if (activeFilter === 'completed' && (!b.isCompleted || !b.apartments || b.apartments.length === 0 || (b.visitCount || 0) < (b.apartments?.length || 0))) return false;
 
     // Apply search filter
     if (!searchTerm.trim()) return true;
@@ -645,9 +645,6 @@ Não Trabalhados:     ${notWorked}
     const matchesAddress = b.address.toLowerCase().includes(term);
     const matchesName = b.name ? b.name.toLowerCase().includes(term) : false;
     return matchesNumber || matchesAddress || matchesName;
-  });
-    return matchesNumber || matchesAddress || matchesName;
-  });
   });
 
   if (isLoading) {
