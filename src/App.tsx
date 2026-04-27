@@ -229,7 +229,8 @@ export default function App() {
         if (!currentBuilding) return prevBuildings;
 
         const visitedApts = new Set(data.map(v => v.apartment));
-      const isCompleted = currentBuilding.apartments.length > 0 && currentBuilding.apartments.every(apt => visitedApts.has(apt)) && visitedApts.size > 0;
+        const isCompleted = currentBuilding.apartments.length > 0 && currentBuilding.apartments.every(apt => visitedApts.has(apt));
+
         if (currentBuilding.visitCount !== snapshot.size || currentBuilding.isCompleted !== isCompleted) {
           const buildingRef = doc(db, 'buildings', buildingId);
           updateDoc(buildingRef, {
@@ -539,26 +540,11 @@ Não Trabalhados:     ${notWorked}
       const visitRef = doc(db, `buildings/${selectedBuilding.id}/visits`, visitId);
       await deleteDoc(visitRef);
 
-      // Recalcular stats reais após deletar
-        const visitsSnap = await getDocs(
-          collection(db, `buildings/${selectedBuilding.id}/visits`)
-        );
-        const remainingVisits = visitsSnap.docs.map(d => d.data());
-        const visitedApts = new Set(remainingVisits.map((v: any) => v.apartment));
-        const isCompleted =
-          selectedBuilding.apartments.length > 0 &&
-          selectedBuilding.apartments.every((apt: string) => visitedApts.has(apt));
-        const lastVisit = remainingVisits.length > 0
-          ? remainingVisits.sort((a: any, b: any) =>
-              (b.date?.toDate?.() || 0) - (a.date?.toDate?.() || 0)
-            )[0].date
-          : null;
-        const buildingRef = doc(db, 'buildings', selectedBuilding.id);
-        await updateDoc(buildingRef, {
-          visitCount: visitsSnap.size,
-          isCompleted: isCompleted,
-          lastVisitDate: lastVisit
-        });
+      // Decrement visitCount to keep stats in sync
+      const buildingRef = doc(db, 'buildings', selectedBuilding.id);
+      await updateDoc(buildingRef, {
+        visitCount: increment(-1)
+      });
       
       setShowVisitModal(false);
       setEditingVisitId(null);
@@ -643,7 +629,7 @@ Não Trabalhados:     ${notWorked}
 
   const filteredBuildings = buildings.filter(b => {
     // Apply status filter
-    if (activeFilter === 'started' && (!b.visitCount || b.visitCount === 0 || b.isCompleted)) return false;
+    if (activeFilter === 'started' && (!b.visitCount || b.visitCount === 0)) return false;
     if (activeFilter === 'pending' && (b.visitCount && b.visitCount > 0)) return false;
     if (activeFilter === 'completed' && !b.isCompleted) return false;
 
@@ -658,7 +644,7 @@ Não Trabalhados:     ${notWorked}
     : false;
     const matchesAddress = b.address.toLowerCase().includes(term);
     const matchesName = b.name ? b.name.toLowerCase().includes(term) : false;
-return matchesNumber || matchesAddress || matchesName;
+  return matchesNumber;
   });
 
   if (isLoading) {
@@ -774,7 +760,7 @@ return matchesNumber || matchesAddress || matchesName;
               >
                 <div className="flex items-center gap-2 mb-1">
                   <span className={cn("text-2xl font-black leading-none", activeFilter === 'started' ? "text-white" : "text-blue-700")}>
-                    {buildings.filter(b => (b.visitCount || 0) > 0 && !b.isCompleted).length}
+                    {buildings.filter(b => (b.visitCount || 0) > 0).length}
                   </span>
                 </div>
                 <span className={cn("text-[8px] font-bold uppercase tracking-widest", activeFilter === 'started' ? "text-white/60" : "text-blue-600/60")}>
@@ -927,16 +913,15 @@ return matchesNumber || matchesAddress || matchesName;
               <div className="bg-slate-900 px-6 py-4 flex items-center justify-between">
                  <div className="flex gap-4">
                     <div>
-  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-1">Prédio</p>
-  <div className="flex items-center gap-3">
-    <p className="text-white font-black text-xl">{selectedBuilding.buildingNumber}</p>
-    {selectedBuilding.underConstruction && (
-      <span className="px-3 py-1 bg-yellow-400 text-yellow-900 text-[10px] font-black uppercase tracking-widest rounded-full flex items-center gap-1 shadow-lg">
-        🚧 Em Construção
-      </span>
-    )}
-  </div>
-</div>
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-1">Prédio</p>
+                      <p className="text-white font-black text-xl">{selectedBuilding.buildingNumber}</p>
+                    </div>
+                 </div>
+                 <div className="flex items-center gap-2">
+                   <button 
+                    onClick={() => {
+                      setEditBuildingForm({
+                        name: selectedBuilding.name || '',
                         buildingNumber: selectedBuilding.buildingNumber || '',
                         address: selectedBuilding.address || '',
                         apartmentsCount: selectedBuilding.apartmentsCount || ''
