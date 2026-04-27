@@ -628,10 +628,18 @@ Não Trabalhados:     ${notWorked}
   };
 
 const filteredBuildings = buildings.filter(b => {
+    const totalApts = b.apartments?.length || 0;
+    const visitsDone = b.visitCount || 0;
+
     // Apply status filter
-    if (activeFilter === 'started' && (!b.visitCount || b.visitCount === 0 || b.isCompleted)) return false;
-    if (activeFilter === 'pending' && (b.visitCount && b.visitCount > 0)) return false;
-    if (activeFilter === 'completed' && (!b.isCompleted || !b.apartments || b.apartments.length === 0 || (b.visitCount || 0) < (b.apartments?.length || 0))) return false;
+    if (activeFilter === 'started' && (visitsDone === 0 || b.isCompleted)) return false;
+    if (activeFilter === 'pending' && visitsDone > 0) return false;
+    
+    // REGRA FINAL: Só entra no Verde (completed) se tiver apartamentos E se visitou todos.
+    if (activeFilter === 'completed') {
+      if (totalApts === 0 || visitsDone < totalApts) return false;
+      if (!b.isCompleted) return false;
+    }
 
     // Apply search filter
     if (!searchTerm.trim()) return true;
@@ -639,14 +647,11 @@ const filteredBuildings = buildings.filter(b => {
     const isNumeric = /^\d+$/.test(term);
     const normalizedBuilding = b.buildingNumber.replace(/^0+/, '') || '0';
     const normalizedTerm = term.replace(/^0+/, '') || '0';
-    const matchesNumber = isNumeric
-      ? normalizedBuilding === normalizedTerm 
-      : false;
+    const matchesNumber = isNumeric ? normalizedBuilding === normalizedTerm : false;
     const matchesAddress = b.address.toLowerCase().includes(term);
     const matchesName = b.name ? b.name.toLowerCase().includes(term) : false;
     return matchesNumber || matchesAddress || matchesName;
   });
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-slate-50">
