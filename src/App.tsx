@@ -669,6 +669,25 @@ export default function App() {
             </motion.div>
           </div>
         )}
+        {showAddAptModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div onClick={() => setShowAddAptModal(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl">
+              <h3 className="text-xl font-black text-slate-900 mb-6">Adicionar Apartamento</h3>
+              <input
+                type="text"
+                value={newAptName}
+                onChange={(e) => setNewAptName(e.target.value)}
+                placeholder="Ex: 101, 202..."
+                className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none"
+                onKeyDown={(e) => e.key === 'Enter' && handleAddApartment()}
+              />
+              <button onClick={handleAddApartment} disabled={isUpdatingBuilding || !newAptName.trim()} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black mt-6 disabled:opacity-50">
+                {isUpdatingBuilding ? <Loader2 className="animate-spin mx-auto" /> : "Adicionar"}
+              </button>
+            </motion.div>
+          </div>
+        )}
 
         {itemToDelete && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
