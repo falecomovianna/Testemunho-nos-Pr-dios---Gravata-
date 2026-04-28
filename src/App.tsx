@@ -525,6 +525,38 @@ export default function App() {
                  <p className="text-slate-900 font-bold text-lg leading-tight">{selectedBuilding.address}</p>
                  {selectedBuilding.name && <p className="text-blue-600 font-medium text-sm mt-1">{selectedBuilding.name}</p>}
               </div>
+              <div className="grid grid-cols-3 divide-x divide-slate-100 min-h-[100px]">
+                <div className="p-4 flex flex-col justify-center">
+                   <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-3">Correio</p>
+                   <div className="flex gap-4">
+                      <button onClick={() => handleUpdateBuilding({ mailbox: 'Individual' })} className="flex items-center gap-1.5 text-[10px] font-bold text-slate-600 group">
+                        <div className={cn("w-2.5 h-2.5 rounded-full ring-2 ring-offset-2 transition-all", selectedBuilding.mailbox === 'Individual' ? 'bg-blue-500 ring-blue-500' : 'bg-white ring-slate-200 group-hover:ring-slate-400')} />
+                        IND
+                      </button>
+                      <button onClick={() => handleUpdateBuilding({ mailbox: 'Coletiva' })} className="flex items-center gap-1.5 text-[10px] font-bold text-slate-600 group">
+                        <div className={cn("w-2.5 h-2.5 rounded-full ring-2 ring-offset-2 transition-all", selectedBuilding.mailbox === 'Coletiva' ? 'bg-slate-900 ring-slate-900' : 'bg-white ring-slate-200 group-hover:ring-slate-400')} />
+                        COL
+                      </button>
+                   </div>
+                </div>
+                <div className="p-4 flex flex-col justify-center">
+                   <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-3">Interfone</p>
+                   <div className="flex gap-4">
+                      <button onClick={() => handleUpdateBuilding({ intercom: 'Sim' })} className="flex items-center gap-1.5 text-[10px] font-bold text-slate-600 group">
+                        <div className={cn("w-2.5 h-2.5 rounded-full ring-2 ring-offset-2 transition-all", selectedBuilding.intercom === 'Sim' ? 'bg-blue-500 ring-blue-500' : 'bg-white ring-slate-200 group-hover:ring-slate-400')} />
+                        SIM
+                      </button>
+                      <button onClick={() => handleUpdateBuilding({ intercom: 'Não' })} className="flex items-center gap-1.5 text-[10px] font-bold text-slate-600 group">
+                        <div className={cn("w-2.5 h-2.5 rounded-full ring-2 ring-offset-2 transition-all", selectedBuilding.intercom === 'Não' ? 'bg-red-500 ring-red-500' : 'bg-white ring-slate-200 group-hover:ring-slate-400')} />
+                        NÃO
+                      </button>
+                   </div>
+                </div>
+                <div className="p-4 flex flex-col justify-center text-center">
+                   <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-1">Apartamentos</p>
+                   <p className="text-3xl font-black text-slate-900 italic tracking-tighter">{selectedBuilding.apartmentsCount || '?'}</p>
+                </div>
+              </div>
             </div>
 
             <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden text-center">
