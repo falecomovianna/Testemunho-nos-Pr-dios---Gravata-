@@ -663,7 +663,7 @@ export default function App() {
                     <p className="text-sm font-bold text-amber-900">{visitNotes}</p>
                   </div>
                 )}
-                <button onClick={() => { const s = prompt('Digite a senha:'); if (s === '8318') { const nota = prompt('Digite a nota (deixe vazio para apagar):'); if (nota !== null) setVisitNotes(nota); } else if (s !== null) alert('Senha incorreta!'); }} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-400 text-center hover:bg-slate-100 transition-all">
+                <button onClick={() => { const s = prompt('Senha:'); if (s !== null && s === '8318') { const n = prompt('Nota:'); if (n !== null) setVisitNotes(n); } else if (s !== null) alert('Incorreta!'); }} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-400 text-center hover:bg-slate-100 transition-all">
                   🔒 nota
                 </button>
                <button onClick={handleSaveVisit} disabled={isSavingVisit} className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black shadow-xl">{isSavingVisit ? <Loader2 className="animate-spin mx-auto" /> : "Salvar Visita"}</button>
