@@ -104,6 +104,7 @@ export default function App() {
   const [visitNotes, setVisitNotes] = useState('');
   const [editingVisitId, setEditingVisitId] = useState<string | null>(null);
   const [isSavingVisit, setIsSavingVisit] = useState(false);
+  const [notesUnlocked, setNotesUnlocked] = useState(false);
   const [isSyncingStats, setIsSyncingStats] = useState(false);
   const [visits, setVisits] = useState<Visit[]>([]);
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
@@ -656,7 +657,19 @@ export default function App() {
                   <button onClick={() => setVisitContacted(true)} className={cn("py-4 rounded-2xl font-black transition-all", visitContacted ? 'bg-green-100 text-green-700 ring-2 ring-green-500' : 'bg-slate-50 text-slate-400')}>SIM</button>
                   <button onClick={() => setVisitContacted(false)} className={cn("py-4 rounded-2xl font-black transition-all", !visitContacted ? 'bg-red-100 text-red-700 ring-2 ring-red-500' : 'bg-slate-50 text-slate-400')}>NÃO</button>
                </div>
-               <textarea value={visitNotes} onChange={(e) => setVisitNotes(e.target.value)} placeholder="Notas..." className="w-full p-5 bg-slate-50 rounded-3xl min-h-[120px] outline-none mb-6" />
+               {notesUnlocked ? (
+                  <textarea value={visitNotes} onChange={(e) => setVisitNotes(e.target.value)} placeholder="Notas..." className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none resize-none h-24" />
+                ) : (
+                  <button onClick={() => { const s = prompt('Digite a senha para adicionar uma nota:'); if (s === '8318') setNotesUnlocked(true); else if (s !== null) alert('Senha incorreta!'); }} className="w-full p-5 bg-amber-50 border-2 border-amber-200 rounded-2xl text-sm font-bold text-amber-700 text-center hover:bg-amber-100 transition-all">
+                    🔒 Clique para adicionar uma nota (senha necessária)
+                  </button>
+                )}
+                {visitNotes && !notesUnlocked && (
+                  <div className="w-full p-4 bg-amber-400 rounded-2xl border-2 border-amber-500">
+                    <p className="text-xs font-black uppercase tracking-widest text-amber-900 mb-1">⚠️ NOTA IMPORTANTE</p>
+                    <p className="text-sm font-bold text-amber-900">{visitNotes}</p>
+                  </div>
+                )}
                <button onClick={handleSaveVisit} disabled={isSavingVisit} className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black shadow-xl">{isSavingVisit ? <Loader2 className="animate-spin mx-auto" /> : "Salvar Visita"}</button>
             </motion.div>
           </div>
