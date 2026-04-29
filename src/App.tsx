@@ -651,7 +651,8 @@ export default function App() {
             <motion.div onClick={() => setShowVisitModal(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
             <motion.div className="relative bg-white w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl">
                <h3 className="text-2xl font-black mb-6">Apto {activeApartment}</h3>
-               <div className="grid grid-cols-2 gap-3 mb-6">
+               <p className="text-sm font-bold text-slate-500 text-center mb-2">Conseguiu falar com alguém?</p>
+              <div className="grid grid-cols-2 gap-3 mb-6">
                   <button onClick={() => setVisitContacted(true)} className={cn("py-4 rounded-2xl font-black transition-all", visitContacted ? 'bg-green-100 text-green-700 ring-2 ring-green-500' : 'bg-slate-50 text-slate-400')}>SIM</button>
                   <button onClick={() => setVisitContacted(false)} className={cn("py-4 rounded-2xl font-black transition-all", !visitContacted ? 'bg-red-100 text-red-700 ring-2 ring-red-500' : 'bg-slate-50 text-slate-400')}>NÃO</button>
                </div>
