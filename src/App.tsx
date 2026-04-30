@@ -525,7 +525,7 @@ export default function App() {
               <div className="p-6">
                  <p className="text-slate-900 font-bold text-lg leading-tight">{selectedBuilding.address}</p>
                  {selectedBuilding.name && <p className="text-blue-600 font-medium text-sm mt-1">{selectedBuilding.name}</p>}
-              </div>
+              </div>{selectedBuilding.observations && <div className="px-6 py-3 bg-amber-50 border-t border-amber-100"><p className="text-xs font-bold uppercase tracking-widest text-amber-600 mb-1">Observações</p><p className="text-sm text-amber-900 font-medium">{selectedBuilding.observations}</p></div>}
               <div className="grid grid-cols-3 divide-x divide-slate-100 min-h-[100px]">
                 <div className="p-4 flex flex-col justify-center">
                    <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-3">Correio</p>
