@@ -90,7 +90,7 @@ export default function App() {
   const [showAddAptModal, setShowAddAptModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{type: 'visit' | 'apartment' | 'building', id: string} | null>(null);
   const [showEditBuildingModal, setShowEditBuildingModal] = useState(false);
-  const [editBuildingForm, setEditBuildingForm] = useState({name: '', buildingNumber: '', address: '', apartmentsCount: ''});
+  const [editBuildingForm, setEditBuildingForm] = useState({name: '', buildingNumber: '', address: '', apartmentsCount: '', observations: ''});
 
   const [newAptName, setNewAptName] = useState('');
   const [reportPassword, setReportPassword] = useState('');
