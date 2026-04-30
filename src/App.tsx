@@ -706,6 +706,7 @@ export default function App() {
                 <input type="text" value={editBuildingForm.name} onChange={(e) => setEditBuildingForm({...editBuildingForm, name: e.target.value})} placeholder="Nome (Opcional)" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none"/>
                 <textarea value={editBuildingForm.address} onChange={(e) => setEditBuildingForm({...editBuildingForm, address: e.target.value})} placeholder="Endereço" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none"/>
                 <input type="number" value={editBuildingForm.apartmentsCount} onChange={(e) => setEditBuildingForm({...editBuildingForm, apartmentsCount: e.target.value})} placeholder="Qtd de Aptos" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none"/>
+                <textarea value={editBuildingForm.observations} onChange={(e) => setEditBuildingForm({...editBuildingForm, observations: e.target.value})} placeholder="Observações (Opcional)" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none min-h-[100px]"/>
               </div>
               <button onClick={handleSaveBuildingEdit} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black mt-6">Salvar</button>
             </motion.div>
