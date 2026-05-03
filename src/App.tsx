@@ -509,7 +509,7 @@ export default function App() {
         {view === 'building' && selectedBuilding && (
           <div className="space-y-6 pb-24">
             <div className="bg-white rounded-3xl border overflow-hidden shadow-xl">
-              <div onClick={() => !selectedBuilding.facadeImageUrl && facadeInputRef.current?.click()} className="h-24 bg-slate-100 relative cursor-pointer">
+              <div onClick={() => !selectedBuilding.facadeImageUrl && facadeInputRef.current?.click()} className="h-48 bg-slate-100 relative cursor-pointer">
                 {selectedBuilding.facadeImageUrl ? <img src={selectedBuilding.facadeImageUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 gap-2"><ImageIcon className="w-8 h-8 opacity-20" /><span className="text-[10px] font-bold uppercase opacity-50">Foto</span></div>}
                 {isUpdatingBuilding && <div className="absolute inset-0 bg-white/60 flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" /></div>}
                 {selectedBuilding.isCompleted && selectedBuilding.apartments.length > 0 && <div className="absolute top-4 left-4"><span className="px-3 py-1.5 bg-emerald-500 text-white text-[10px] font-black uppercase rounded-full shadow-lg flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5" /> Concluído</span></div>}
