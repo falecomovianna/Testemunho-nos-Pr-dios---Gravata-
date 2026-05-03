@@ -34,7 +34,7 @@ async function compressImage(file: File): Promise<string> {
       img.onerror = () => reject(new Error('Falha ao carregar a imagem.'));
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 1200;
+        const MAX_WIDTH = 800;
         const scaleSize = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scaleSize;
