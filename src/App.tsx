@@ -579,7 +579,7 @@ export default function App() {
                   return (
                     <button key={apt} onClick={() => { setActiveApartment(apt); if (lastVisit) { setVisitContacted(lastVisit.contacted); setVisitNotes(lastVisit.notes || ''); setEditingVisitId(lastVisit.id); } else { setVisitContacted(true); setVisitNotes(''); setEditingVisitId(null); } setShowVisitModal(true); }} className={cn("p-4 py-6 rounded-2xl border-2 flex flex-col items-center transition-all min-h-[100px]", lastVisit ? (lastVisit.contacted ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700') : 'bg-white border-white text-slate-600 shadow-sm')}>
                       <span className="text-xl font-black tracking-tighter">{apt}</span>
-                      {!lastVisit && <button onClick={(e) => { e.stopPropagation(); handleDeleteAllAptVisits(apt); }} className="mt-1 text-red-400"><Trash2 className="w-3 h-3"/></button>}
+                      
                       {lastVisit && <span className="text-[8px] font-black uppercase mt-2">{lastVisit.contacted ? 'SIM' : 'NÃO'}</span>}
                     </button>
                   );
