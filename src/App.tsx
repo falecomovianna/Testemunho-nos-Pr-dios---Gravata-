@@ -275,7 +275,7 @@ export default function App() {
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(imgRef.current, completedCrop.x * scaleX, completedCrop.y * scaleY, completedCrop.width * scaleX, completedCrop.height * scaleY, 0, 0, completedCrop.width, completedCrop.height);
-          const finalBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          canvas.toDataURL('image/png')
           await handleUpdateBuilding({ facadeImageUrl: finalBase64 });
         }
       }
