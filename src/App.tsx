@@ -280,7 +280,7 @@ export default function App() {
         }
       }
     } catch (error) {
-       alert("Erro ao recortar imagem.");
+      alert("Erro: " + (error as Error).message);
     } finally {
        setIsUpdatingBuilding(false);
        setCropImageBase64('');
