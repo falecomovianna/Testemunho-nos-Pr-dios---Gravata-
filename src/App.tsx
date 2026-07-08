@@ -308,18 +308,12 @@ export default function App() {
     }
   };
 
-  // Tenta salvar a foto de forma "leve" (Storage). Se não der certo por qualquer
-  // motivo (ex: Storage não habilitado no projeto Firebase), usa o método antigo
-  // (base64 direto no banco), exatamente como já funcionava antes desta mudança.
+  // DESATIVADO por enquanto: estava causando trava no upload de fotos.
+  // Voltou a salvar do jeito 100% original (base64 direto no banco),
+  // exatamente como funcionava antes de mexermos na velocidade.
   const saveFacadeImage = async (dataUrl: string) => {
     if (!selectedBuilding) return;
-    try {
-      const url = await uploadFacadeImage(selectedBuilding.id, dataUrl);
-      await handleUpdateBuilding({ facadeImageUrl: url });
-    } catch (err) {
-      console.warn('Não foi possível usar o Storage, salvando a foto do jeito antigo:', err);
-      await handleUpdateBuilding({ facadeImageUrl: dataUrl });
-    }
+    await handleUpdateBuilding({ facadeImageUrl: dataUrl });
   };
 
   const applyCrop = async () => {
