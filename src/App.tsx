@@ -86,6 +86,12 @@ export default function App() {
   const [manualText, setManualText] = useState('');
   
   const [showManualModal, setShowManualModal] = useState(false);
+  const [addMode, setAddMode] = useState<'ia' | 'manual'>('ia');
+  const [manualForm, setManualForm] = useState({
+    buildingNumber: '', name: '', address: '', mailbox: '' as '' | 'Individual' | 'Coletiva',
+    intercom: '' as '' | 'Sim' | 'Não', blocks: '', apartmentsText: ''
+  });
+  const [isCreatingManual, setIsCreatingManual] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showAddAptModal, setShowAddAptModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{type: 'visit' | 'apartment' | 'building', id: string} | null>(null);
@@ -200,6 +206,49 @@ export default function App() {
       alert("Erro ao extrair dados.");
     } finally {
       setIsProcessingText(false);
+    }
+  };
+
+  const resetManualForm = () => {
+    setManualForm({ buildingNumber: '', name: '', address: '', mailbox: '', intercom: '', blocks: '', apartmentsText: '' });
+  };
+
+  const handleManualCreate = async () => {
+    if (!manualForm.buildingNumber.trim() || !manualForm.address.trim()) {
+      alert("Preencha ao menos o Número e o Endereço.");
+      return;
+    }
+    setIsCreatingManual(true);
+    try {
+      const apartments = manualForm.apartmentsText
+        .split(/[,\n]/)
+        .map(a => a.trim())
+        .filter(a => a.length > 0);
+
+      const newBuilding = {
+        buildingNumber: manualForm.buildingNumber.trim(),
+        name: manualForm.name.trim(),
+        address: manualForm.address.trim(),
+        mailbox: manualForm.mailbox || undefined,
+        intercom: manualForm.intercom || undefined,
+        blocks: manualForm.blocks.trim(),
+        apartmentsCount: apartments.length > 0 ? String(apartments.length) : '',
+        apartments,
+        ownerId: 'team_public',
+        createdAt: serverTimestamp(),
+        visitCount: 0,
+        isCompleted: false
+      };
+      const docRef = await addDoc(collection(db, 'buildings'), newBuilding);
+      setSelectedBuilding({ id: docRef.id, ...newBuilding } as unknown as Building);
+      setView('building');
+      setShowManualModal(false);
+      resetManualForm();
+      setAddMode('ia');
+    } catch (error) {
+      alert("Erro ao cadastrar prédio.");
+    } finally {
+      setIsCreatingManual(false);
     }
   };
 
@@ -525,7 +574,7 @@ export default function App() {
               <div className="bg-slate-900 px-6 py-4 flex items-center justify-between">
                  <div className="text-white"><p className="text-[9px] font-bold text-slate-500 uppercase">Prédio</p><p className="font-black text-xl">{selectedBuilding.buildingNumber}</p></div>
                  <div className="flex gap-2">
-                   <button onClick={() => { setEditBuildingForm({ name: selectedBuilding.name || '', buildingNumber: selectedBuilding.buildingNumber || '', address: selectedBuilding.address || '', apartmentsCount: selectedBuilding.apartmentsCount || '' }); setShowEditBuildingModal(true); }} className="p-2 bg-blue-500/20 text-blue-400 rounded-lg"><Edit className="w-4 h-4" /></button>
+                   <button onClick={() => { setEditBuildingForm({ name: selectedBuilding.name || '', buildingNumber: selectedBuilding.buildingNumber || '', address: selectedBuilding.address || '', apartmentsCount: selectedBuilding.apartmentsCount || '', observations: (selectedBuilding as any).observations || '' }); setShowEditBuildingModal(true); }} className="p-2 bg-blue-500/20 text-blue-400 rounded-lg"><Edit className="w-4 h-4" /></button>
                    <button onClick={() => setItemToDelete({ type: 'building', id: selectedBuilding.id! })} className="p-2 bg-red-500/20 text-red-400 rounded-lg"><Trash2 className="w-4 h-4" /></button>
                    <button onClick={() => openInMaps(selectedBuilding.address)} className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg shadow-blue-500/20"><Navigation className="w-4 h-4" /> GPS</button>
                  </div>
@@ -647,11 +696,53 @@ export default function App() {
         {showManualModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowManualModal(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
-            <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="relative bg-white w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl">
+            <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="relative bg-white w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
                <h3 className="text-2xl font-black text-slate-900 mb-2">Novo Prédio</h3>
-               <p className="text-xs text-slate-400 uppercase tracking-widest font-bold mb-6">Cadastro Rápido</p>
-               <textarea value={manualText} onChange={(e) => setManualText(e.target.value)} placeholder="Ex: Rua Central 100, 4 aptos: 101, 102, 201, 202..." className="w-full p-5 bg-slate-50 border-none rounded-3xl text-sm min-h-[150px] outline-none" />
-               <button onClick={handleTextUpload} disabled={isProcessingText || !manualText.trim()} className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-black text-lg mt-6 shadow-xl shadow-blue-500/20 disabled:opacity-50">{isProcessingText ? <Loader2 className="animate-spin mx-auto" /> : "Cadastrar"}</button>
+               <p className="text-xs text-slate-400 uppercase tracking-widest font-bold mb-6">Escolha como cadastrar</p>
+
+               <div className="flex bg-slate-100 rounded-2xl p-1 mb-6">
+                 <button onClick={() => setAddMode('ia')} className={cn("flex-1 py-2.5 rounded-xl text-xs font-black uppercase transition-all", addMode === 'ia' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400")}>Colar texto (IA)</button>
+                 <button onClick={() => setAddMode('manual')} className={cn("flex-1 py-2.5 rounded-xl text-xs font-black uppercase transition-all", addMode === 'manual' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400")}>Manual</button>
+               </div>
+
+               {addMode === 'ia' ? (
+                 <>
+                   <textarea value={manualText} onChange={(e) => setManualText(e.target.value)} placeholder="Ex: Rua Central 100, 4 aptos: 101, 102, 201, 202..." className="w-full p-5 bg-slate-50 border-none rounded-3xl text-sm min-h-[150px] outline-none" />
+                   <button onClick={handleTextUpload} disabled={isProcessingText || !manualText.trim()} className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-black text-lg mt-6 shadow-xl shadow-blue-500/20 disabled:opacity-50">{isProcessingText ? <Loader2 className="animate-spin mx-auto" /> : "Cadastrar com IA"}</button>
+                 </>
+               ) : (
+                 <div className="space-y-4">
+                   <input type="text" value={manualForm.buildingNumber} onChange={(e) => setManualForm({...manualForm, buildingNumber: e.target.value})} placeholder="Número do Prédio *" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none"/>
+                   <input type="text" value={manualForm.name} onChange={(e) => setManualForm({...manualForm, name: e.target.value})} placeholder="Nome do Edifício (Opcional)" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none"/>
+                   <textarea value={manualForm.address} onChange={(e) => setManualForm({...manualForm, address: e.target.value})} placeholder="Endereço *" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none min-h-[70px]"/>
+
+                   <div className="grid grid-cols-2 gap-3">
+                     <div>
+                       <p className="text-[10px] font-bold uppercase text-slate-400 mb-2 px-1">Correio</p>
+                       <div className="flex gap-2">
+                         <button onClick={() => setManualForm({...manualForm, mailbox: 'Individual'})} className={cn("flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase", manualForm.mailbox === 'Individual' ? "bg-blue-600 text-white" : "bg-slate-50 text-slate-500")}>Individual</button>
+                         <button onClick={() => setManualForm({...manualForm, mailbox: 'Coletiva'})} className={cn("flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase", manualForm.mailbox === 'Coletiva' ? "bg-slate-900 text-white" : "bg-slate-50 text-slate-500")}>Coletiva</button>
+                       </div>
+                     </div>
+                     <div>
+                       <p className="text-[10px] font-bold uppercase text-slate-400 mb-2 px-1">Interfone</p>
+                       <div className="flex gap-2">
+                         <button onClick={() => setManualForm({...manualForm, intercom: 'Sim'})} className={cn("flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase", manualForm.intercom === 'Sim' ? "bg-blue-600 text-white" : "bg-slate-50 text-slate-500")}>Sim</button>
+                         <button onClick={() => setManualForm({...manualForm, intercom: 'Não'})} className={cn("flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase", manualForm.intercom === 'Não' ? "bg-red-500 text-white" : "bg-slate-50 text-slate-500")}>Não</button>
+                       </div>
+                     </div>
+                   </div>
+
+                   <input type="text" value={manualForm.blocks} onChange={(e) => setManualForm({...manualForm, blocks: e.target.value})} placeholder="Blocos (Opcional)" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none"/>
+
+                   <div>
+                     <textarea value={manualForm.apartmentsText} onChange={(e) => setManualForm({...manualForm, apartmentsText: e.target.value})} placeholder="Apartamentos, separados por vírgula (Ex: 101, 102, 201, 202)" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none min-h-[80px]"/>
+                     <p className="text-[10px] text-slate-400 mt-1.5 px-1">{manualForm.apartmentsText.split(/[,\n]/).map(a => a.trim()).filter(a => a).length} apartamento(s) detectado(s)</p>
+                   </div>
+
+                   <button onClick={handleManualCreate} disabled={isCreatingManual || !manualForm.buildingNumber.trim() || !manualForm.address.trim()} className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black text-lg mt-2 shadow-xl disabled:opacity-50">{isCreatingManual ? <Loader2 className="animate-spin mx-auto" /> : "Cadastrar Manualmente"}</button>
+                 </div>
+               )}
             </motion.div>
           </div>
         )}
