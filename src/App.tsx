@@ -268,8 +268,8 @@ export default function App() {
         await handleUpdateBuilding({ facadeImageUrl: cropImageBase64 });
       } else {
         const canvas = document.createElement('canvas');
-        const scaleX = imgRef.naturalWidth / imgRef.current.width;
-        const scaleY = imgRef.naturalHeight / imgRef.current.height;
+        const scaleX = imgRef.current.naturalWidth / imgRef.current.width;
+        const scaleY = imgRef.current.naturalHeight / imgRef.current.height;
         canvas.width = completedCrop.width;
         canvas.height = completedCrop.height;
         const ctx = canvas.getContext('2d');
@@ -513,6 +513,14 @@ export default function App() {
                 {selectedBuilding.facadeImageUrl ? <img src={selectedBuilding.facadeImageUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 gap-2"><ImageIcon className="w-8 h-8 opacity-20" /><span className="text-[10px] font-bold uppercase opacity-50">Foto</span></div>}
                 {isUpdatingBuilding && <div className="absolute inset-0 bg-white/60 flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" /></div>}
                 {selectedBuilding.isCompleted && selectedBuilding.apartments.length > 0 && <div className="absolute top-4 left-4"><span className="px-3 py-1.5 bg-emerald-500 text-white text-[10px] font-black uppercase rounded-full shadow-lg flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5" /> Concluído</span></div>}
+                {selectedBuilding.facadeImageUrl && !isUpdatingBuilding && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); facadeInputRef.current?.click(); }}
+                    className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-2 bg-slate-900/80 backdrop-blur text-white text-[10px] font-black uppercase rounded-xl shadow-lg hover:bg-slate-900"
+                  >
+                    <Camera className="w-3.5 h-3.5" /> Trocar foto
+                  </button>
+                )}
               </div>
               <div className="bg-slate-900 px-6 py-4 flex items-center justify-between">
                  <div className="text-white"><p className="text-[9px] font-bold text-slate-500 uppercase">Prédio</p><p className="font-black text-xl">{selectedBuilding.buildingNumber}</p></div>
