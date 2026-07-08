@@ -14,6 +14,7 @@ export interface Building {
   lastVisitDate?: any;
   isCompleted?: boolean;
   facadeImageUrl?: string;
+  observations?: string;
   underConstruction?: boolean;
   createdAt: any;
 }
