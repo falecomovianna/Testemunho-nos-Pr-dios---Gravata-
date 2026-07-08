@@ -18,7 +18,7 @@ import {
   increment,
   writeBatch
 } from 'firebase/firestore';
-import { db } from './lib/firebase';
+import { db, uploadFacadeImage } from './lib/firebase';
 import { extractBuildingData, extractBuildingDataFromText, extractBuildingBoundingBox } from './lib/gemini';
 import { Building, Visit } from './types';
 import { cn, formatDate } from './lib/utils';
@@ -308,13 +308,27 @@ export default function App() {
     }
   };
 
+  // Tenta salvar a foto de forma "leve" (Storage). Se não der certo por qualquer
+  // motivo (ex: Storage não habilitado no projeto Firebase), usa o método antigo
+  // (base64 direto no banco), exatamente como já funcionava antes desta mudança.
+  const saveFacadeImage = async (dataUrl: string) => {
+    if (!selectedBuilding) return;
+    try {
+      const url = await uploadFacadeImage(selectedBuilding.id, dataUrl);
+      await handleUpdateBuilding({ facadeImageUrl: url });
+    } catch (err) {
+      console.warn('Não foi possível usar o Storage, salvando a foto do jeito antigo:', err);
+      await handleUpdateBuilding({ facadeImageUrl: dataUrl });
+    }
+  };
+
   const applyCrop = async () => {
     if (!imgRef.current || !selectedBuilding || !cropImageBase64) return;
     setIsUpdatingBuilding(true);
     setShowCropModal(false);
     try {
       if (!completedCrop || completedCrop.width === 0) {
-        await handleUpdateBuilding({ facadeImageUrl: cropImageBase64 });
+        await saveFacadeImage(cropImageBase64);
       } else {
         const canvas = document.createElement('canvas');
         const scaleX = imgRef.current.naturalWidth / imgRef.current.width;
@@ -325,7 +339,7 @@ export default function App() {
         if (ctx) {
           ctx.drawImage(imgRef.current, completedCrop.x * scaleX, completedCrop.y * scaleY, completedCrop.width * scaleX, completedCrop.height * scaleY, 0, 0, completedCrop.width, completedCrop.height);
           const finalBase64 = canvas.toDataURL('image/jpeg', 0.85);
-          await handleUpdateBuilding({ facadeImageUrl: finalBase64 });
+          await saveFacadeImage(finalBase64);
         }
       }
     } catch (error) {
