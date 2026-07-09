@@ -225,12 +225,10 @@ export default function App() {
         .map(a => a.trim())
         .filter(a => a.length > 0);
 
-      const newBuilding = {
+      const newBuilding: any = {
         buildingNumber: manualForm.buildingNumber.trim(),
         name: manualForm.name.trim(),
         address: manualForm.address.trim(),
-        mailbox: manualForm.mailbox || undefined,
-        intercom: manualForm.intercom || undefined,
         blocks: manualForm.blocks.trim(),
         apartmentsCount: apartments.length > 0 ? String(apartments.length) : '',
         apartments,
@@ -239,6 +237,8 @@ export default function App() {
         visitCount: 0,
         isCompleted: false
       };
+      if (manualForm.mailbox) newBuilding.mailbox = manualForm.mailbox;
+      if (manualForm.intercom) newBuilding.intercom = manualForm.intercom;
       const docRef = await addDoc(collection(db, 'buildings'), newBuilding);
       setSelectedBuilding({ id: docRef.id, ...newBuilding } as unknown as Building);
       setView('building');
@@ -246,7 +246,7 @@ export default function App() {
       resetManualForm();
       setAddMode('ia');
     } catch (error) {
-      alert("Erro ao cadastrar prédio.");
+      alert("Erro ao cadastrar prédio: " + (error as Error).message);
     } finally {
       setIsCreatingManual(false);
     }
