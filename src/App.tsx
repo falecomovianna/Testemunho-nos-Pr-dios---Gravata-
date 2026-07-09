@@ -566,18 +566,10 @@ export default function App() {
         {view === 'building' && selectedBuilding && (
           <div className="space-y-6 pb-24">
             <div className="bg-white rounded-3xl border overflow-hidden shadow-xl">
-              <div onClick={() => !selectedBuilding.facadeImageUrl && facadeInputRef.current?.click()} className="h-48 bg-slate-100 relative cursor-pointer">
-                {selectedBuilding.facadeImageUrl ? <img src={selectedBuilding.facadeImageUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 gap-2"><ImageIcon className="w-8 h-8 opacity-20" /><span className="text-[10px] font-bold uppercase opacity-50">Foto</span></div>}
+              <div className="h-48 bg-slate-100 relative">
+                {selectedBuilding.facadeImageUrl ? <img src={selectedBuilding.facadeImageUrl} className="w-full h-full object-cover" /> : <div onClick={() => facadeInputRef.current?.click()} className="w-full h-full flex flex-col items-center justify-center text-slate-400 gap-2 cursor-pointer"><ImageIcon className="w-8 h-8 opacity-20" /><span className="text-[10px] font-bold uppercase opacity-50">Foto</span></div>}
                 {isUpdatingBuilding && <div className="absolute inset-0 bg-white/60 flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" /></div>}
                 {selectedBuilding.isCompleted && selectedBuilding.apartments.length > 0 && <div className="absolute top-4 left-4"><span className="px-3 py-1.5 bg-emerald-500 text-white text-[10px] font-black uppercase rounded-full shadow-lg flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5" /> Concluído</span></div>}
-                {selectedBuilding.facadeImageUrl && !isUpdatingBuilding && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); facadeInputRef.current?.click(); }}
-                    className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-2 bg-slate-900/80 backdrop-blur text-white text-[10px] font-black uppercase rounded-xl shadow-lg hover:bg-slate-900"
-                  >
-                    <Camera className="w-3.5 h-3.5" /> Trocar foto
-                  </button>
-                )}
               </div>
               <div className="bg-slate-900 px-6 py-4 flex items-center justify-between">
                  <div className="text-white"><p className="text-[9px] font-bold text-slate-500 uppercase">Prédio</p><p className="font-black text-xl">{selectedBuilding.buildingNumber}</p></div>
@@ -815,6 +807,12 @@ export default function App() {
                 <textarea value={editBuildingForm.address} onChange={(e) => setEditBuildingForm({...editBuildingForm, address: e.target.value})} placeholder="Endereço" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none"/>
                 <input type="number" value={editBuildingForm.apartmentsCount} onChange={(e) => setEditBuildingForm({...editBuildingForm, apartmentsCount: e.target.value})} placeholder="Qtd de Aptos" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none"/>
                 <textarea value={editBuildingForm.observations} onChange={(e) => setEditBuildingForm({...editBuildingForm, observations: e.target.value})} placeholder="Observações (Opcional)" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none min-h-[100px]"/>
+                <button
+                  onClick={() => { setShowEditBuildingModal(false); facadeInputRef.current?.click(); }}
+                  className="w-full py-4 bg-slate-100 text-slate-700 rounded-2xl font-black flex items-center justify-center gap-2"
+                >
+                  <Camera className="w-4 h-4" /> {selectedBuilding.facadeImageUrl ? 'Trocar foto do prédio' : 'Adicionar foto do prédio'}
+                </button>
               </div>
               <button onClick={handleSaveBuildingEdit} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black mt-6">Salvar</button>
             </motion.div>
