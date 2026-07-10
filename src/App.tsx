@@ -14,6 +14,8 @@ import {
   deleteDoc,
   updateDoc,
   getDocs,
+  getDoc,
+  setDoc,
   where,
   increment,
   writeBatch
@@ -34,7 +36,7 @@ async function compressImage(file: File): Promise<string> {
       img.onerror = () => reject(new Error('Falha ao carregar a imagem.'));
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 800;
+        const MAX_WIDTH = 640;
         const scaleSize = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scaleSize;
@@ -42,7 +44,7 @@ async function compressImage(file: File): Promise<string> {
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-        const base64 = canvas.toDataURL('image/jpeg', 0.7);
+        const base64 = canvas.toDataURL('image/jpeg', 0.6);
         resolve(base64.split(',')[1]);
       };
     };
@@ -78,6 +80,7 @@ import 'react-image-crop/dist/ReactCrop.css';
 export default function App() {
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
+  const [facadePhotoUrl, setFacadePhotoUrl] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'started' | 'pending' | 'completed'>('all');
   const [isLoading, setIsLoading] = useState(true);
@@ -184,6 +187,22 @@ export default function App() {
       });
     });
     return () => unsubscribe();
+  }, [selectedBuilding?.id]);
+
+  // Busca a foto da fachada separadamente (fora do documento principal do
+  // prédio), e só quando esse prédio específico é aberto. Isso evita que a
+  // foto seja reenviada toda vez que qualquer coisa mudar no prédio (como
+  // registrar uma visita), economizando bastante da cota gratuita do banco.
+  useEffect(() => {
+    if (!selectedBuilding) { setFacadePhotoUrl(''); return; }
+    let active = true;
+    setFacadePhotoUrl('');
+    getDoc(doc(db, 'buildings', selectedBuilding.id, 'meta', 'photo'))
+      .then(snap => {
+        if (active && snap.exists()) setFacadePhotoUrl((snap.data() as any).url || '');
+      })
+      .catch(err => console.warn('Não foi possível carregar a foto:', err));
+    return () => { active = false; };
   }, [selectedBuilding?.id]);
 
   const handleTextUpload = async () => {
@@ -308,12 +327,16 @@ export default function App() {
     }
   };
 
-  // DESATIVADO por enquanto: estava causando trava no upload de fotos.
-  // Voltou a salvar do jeito 100% original (base64 direto no banco),
-  // exatamente como funcionava antes de mexermos na velocidade.
+  // Salva a foto numa "gaveta" separada do documento principal do prédio.
+  // Assim, atualizar a foto (ou registrar visitas depois) não fica
+  // reenviando a foto inteira pra todo mundo que está com o app aberto.
   const saveFacadeImage = async (dataUrl: string) => {
     if (!selectedBuilding) return;
-    await handleUpdateBuilding({ facadeImageUrl: dataUrl });
+    await setDoc(doc(db, 'buildings', selectedBuilding.id, 'meta', 'photo'), {
+      url: dataUrl,
+      updatedAt: serverTimestamp()
+    });
+    setFacadePhotoUrl(dataUrl);
   };
 
   const applyCrop = async () => {
@@ -332,7 +355,7 @@ export default function App() {
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(imgRef.current, completedCrop.x * scaleX, completedCrop.y * scaleY, completedCrop.width * scaleX, completedCrop.height * scaleY, 0, 0, completedCrop.width, completedCrop.height);
-          const finalBase64 = canvas.toDataURL('image/jpeg', 0.85);
+          const finalBase64 = canvas.toDataURL('image/jpeg', 0.6);
           await saveFacadeImage(finalBase64);
         }
       }
@@ -410,7 +433,6 @@ export default function App() {
         await updateDoc(doc(db, `buildings/${selectedBuilding.id}/visits`, editingVisitId), visitData);
       } else {
         await addDoc(collection(db, `buildings/${selectedBuilding.id}/visits`), visitData);
-        await updateDoc(doc(db, 'buildings', selectedBuilding.id), { visitCount: increment(1), lastVisitDate: serverTimestamp() });
       }
       setShowVisitModal(false);
       setVisitNotes('');
@@ -427,7 +449,6 @@ export default function App() {
     setIsSavingVisit(true);
     try {
       await deleteDoc(doc(db, `buildings/${selectedBuilding.id}/visits`, visitId));
-      await updateDoc(doc(db, 'buildings', selectedBuilding.id), { visitCount: increment(-1) });
       setShowVisitModal(false);
     } catch (error) { alert("Erro ao excluir."); } finally { setIsSavingVisit(false); }
   };
@@ -441,7 +462,6 @@ export default function App() {
       const batch = writeBatch(db);
       aptVisits.forEach(v => batch.delete(doc(db, `buildings/${selectedBuilding.id}/visits`, v.id)));
       await batch.commit();
-      await updateDoc(doc(db, 'buildings', selectedBuilding.id), { visitCount: increment(-aptVisits.length) });
     } catch (error) { alert("Erro ao limpar registros."); } finally { setIsSavingVisit(false); }
   };
 
@@ -567,7 +587,7 @@ export default function App() {
           <div className="space-y-6 pb-24">
             <div className="bg-white rounded-3xl border overflow-hidden shadow-xl">
               <div className="h-48 bg-slate-100 relative">
-                {selectedBuilding.facadeImageUrl ? <img src={selectedBuilding.facadeImageUrl} className="w-full h-full object-cover" /> : <div onClick={() => facadeInputRef.current?.click()} className="w-full h-full flex flex-col items-center justify-center text-slate-400 gap-2 cursor-pointer"><ImageIcon className="w-8 h-8 opacity-20" /><span className="text-[10px] font-bold uppercase opacity-50">Foto</span></div>}
+                {facadePhotoUrl ? <img src={facadePhotoUrl} className="w-full h-full object-cover" /> : <div onClick={() => facadeInputRef.current?.click()} className="w-full h-full flex flex-col items-center justify-center text-slate-400 gap-2 cursor-pointer"><ImageIcon className="w-8 h-8 opacity-20" /><span className="text-[10px] font-bold uppercase opacity-50">Foto</span></div>}
                 {isUpdatingBuilding && <div className="absolute inset-0 bg-white/60 flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" /></div>}
                 {selectedBuilding.isCompleted && selectedBuilding.apartments.length > 0 && <div className="absolute top-4 left-4"><span className="px-3 py-1.5 bg-emerald-500 text-white text-[10px] font-black uppercase rounded-full shadow-lg flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5" /> Concluído</span></div>}
               </div>
@@ -811,7 +831,7 @@ export default function App() {
                   onClick={() => { setShowEditBuildingModal(false); facadeInputRef.current?.click(); }}
                   className="w-full py-4 bg-slate-100 text-slate-700 rounded-2xl font-black flex items-center justify-center gap-2"
                 >
-                  <Camera className="w-4 h-4" /> {selectedBuilding.facadeImageUrl ? 'Trocar foto do prédio' : 'Adicionar foto do prédio'}
+                  <Camera className="w-4 h-4" /> {facadePhotoUrl ? 'Trocar foto do prédio' : 'Adicionar foto do prédio'}
                 </button>
               </div>
               <button onClick={handleSaveBuildingEdit} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black mt-6">Salvar</button>
