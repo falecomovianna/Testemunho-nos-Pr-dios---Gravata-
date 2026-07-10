@@ -16,6 +16,7 @@ import {
   getDocs,
   getDoc,
   setDoc,
+  deleteField,
   where,
   increment,
   writeBatch
@@ -196,10 +197,26 @@ export default function App() {
   useEffect(() => {
     if (!selectedBuilding) { setFacadePhotoUrl(''); return; }
     let active = true;
-    setFacadePhotoUrl('');
+    // Enquanto busca no lugar novo, já mostra a foto antiga (se existir),
+    // pra não "piscar" vazio à toa em prédios cadastrados antes desta mudança.
+    setFacadePhotoUrl((selectedBuilding as any).facadeImageUrl || '');
     getDoc(doc(db, 'buildings', selectedBuilding.id, 'meta', 'photo'))
-      .then(snap => {
-        if (active && snap.exists()) setFacadePhotoUrl((snap.data() as any).url || '');
+      .then(async snap => {
+        if (!active) return;
+        if (snap.exists() && (snap.data() as any).url) {
+          setFacadePhotoUrl((snap.data() as any).url);
+        } else if ((selectedBuilding as any).facadeImageUrl) {
+          // Prédio antigo, com foto salva do jeito de antes. Move ela
+          // sozinho pro lugar novo, e libera o documento principal do
+          // prédio dessa foto, pra parar de reenviá-la a cada mudança.
+          const oldUrl = (selectedBuilding as any).facadeImageUrl;
+          try {
+            await setDoc(doc(db, 'buildings', selectedBuilding.id, 'meta', 'photo'), { url: oldUrl, updatedAt: serverTimestamp() });
+            await updateDoc(doc(db, 'buildings', selectedBuilding.id), { facadeImageUrl: deleteField() });
+          } catch (err) {
+            console.warn('Não foi possível migrar a foto antiga:', err);
+          }
+        }
       })
       .catch(err => console.warn('Não foi possível carregar a foto:', err));
     return () => { active = false; };
