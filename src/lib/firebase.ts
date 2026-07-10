@@ -1,11 +1,30 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, User } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
 import * as firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig as any);
-export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId);
+
+// Ativa uma "memória" local (cache) do banco de dados, guardada no próprio
+// navegador. Isso faz o app abrir bem mais rápido nas próximas vezes e evita
+// ter que baixar a lista inteira de prédios do zero a cada abertura — o que
+// economiza bastante da cota gratuita. Se o navegador não suportar esse
+// recurso por algum motivo (bem raro), cai automaticamente no modo padrão,
+// sem quebrar nada.
+let dbInstance;
+try {
+  dbInstance = initializeFirestore(
+    app,
+    { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) },
+    (firebaseConfig as any).firestoreDatabaseId
+  );
+} catch (err) {
+  console.warn('Cache local não disponível, usando modo padrão:', err);
+  dbInstance = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId);
+}
+export const db = dbInstance;
+
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
@@ -22,17 +41,3 @@ export async function uploadFacadeImage(buildingId: string, base64DataUrl: strin
   await uploadString(imageRef, base64DataUrl, 'data_url');
   return await getDownloadURL(imageRef);
 }
-
-// Connection test
-async function testConnection() {
-  try {
-    // Access a dummy doc to verify connection
-    await getDocFromServer(doc(db, '_internal_', 'startup_check'));
-    console.log("Firebase connection established.");
-  } catch (error: any) {
-    if (error.message && error.message.includes('the client is offline')) {
-      console.error("Firebase is offline. Check configuration.");
-    }
-  }
-}
-testConnection();
