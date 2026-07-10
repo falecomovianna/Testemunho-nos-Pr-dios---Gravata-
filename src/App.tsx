@@ -116,6 +116,7 @@ export default function App() {
   const [isSavingVisit, setIsSavingVisit] = useState(false);
   const [notesUnlocked, setNotesUnlocked] = useState(false);
   const [isSyncingStats, setIsSyncingStats] = useState(false);
+  const [isMigratingPhotos, setIsMigratingPhotos] = useState(false);
   const [visits, setVisits] = useState<Visit[]>([]);
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
   
@@ -434,6 +435,36 @@ export default function App() {
     }
   };
 
+  // Migra de uma vez só todas as fotos que ainda estão no lugar antigo
+  // (grudadas no documento principal do prédio) para o lugar novo
+  // (separado). É uma ação única — depois de rodada, não precisa mais.
+  const migrateAllFacadePhotos = async () => {
+    const toMigrate = buildings.filter(b => (b as any).facadeImageUrl);
+    if (toMigrate.length === 0) {
+      alert("Nenhuma foto antiga encontrada para migrar. Já está tudo atualizado!");
+      return;
+    }
+    if (!confirm(`Encontrei ${toMigrate.length} prédio(s) com foto no lugar antigo. Migrar agora?`)) return;
+    setIsMigratingPhotos(true);
+    let success = 0, failed = 0;
+    try {
+      for (const b of toMigrate) {
+        try {
+          const oldUrl = (b as any).facadeImageUrl;
+          await setDoc(doc(db, 'buildings', b.id, 'meta', 'photo'), { url: oldUrl, updatedAt: serverTimestamp() });
+          await updateDoc(doc(db, 'buildings', b.id), { facadeImageUrl: deleteField() });
+          success++;
+        } catch (err) {
+          failed++;
+          console.warn(`Falha ao migrar prédio ${b.id}:`, err);
+        }
+      }
+      alert(`Migração concluída! ${success} prédio(s) migrado(s)${failed > 0 ? `, ${failed} falharam` : ''}.`);
+    } finally {
+      setIsMigratingPhotos(false);
+    }
+  };
+
   const handleSaveVisit = async () => {
     if (!selectedBuilding || !activeApartment) return;
     setIsSavingVisit(true);
@@ -560,7 +591,10 @@ export default function App() {
             <div className="space-y-2">
               <div className="flex justify-between items-center px-1">
                  <h3 className="text-[10px] font-bold uppercase text-slate-400">Resumo do Trabalho</h3>
-                 <button onClick={syncAllBuildingStats} disabled={isSyncingStats} className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 hover:text-blue-600"><RefreshCw className={cn("w-3 h-3", isSyncingStats && "animate-spin")} /> Sincronizar</button>
+                 <div className="flex items-center gap-3">
+                   <button onClick={migrateAllFacadePhotos} disabled={isMigratingPhotos} className="flex items-center gap-1.5 text-[10px] font-bold text-amber-600 hover:text-amber-700"><ImageIcon className={cn("w-3 h-3", isMigratingPhotos && "animate-pulse")} /> {isMigratingPhotos ? 'Migrando...' : 'Migrar fotos antigas'}</button>
+                   <button onClick={syncAllBuildingStats} disabled={isSyncingStats} className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 hover:text-blue-600"><RefreshCw className={cn("w-3 h-3", isSyncingStats && "animate-spin")} /> Sincronizar</button>
+                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <button onClick={() => setActiveFilter('all')} className={cn("p-4 rounded-3xl border", activeFilter === 'all' ? "bg-slate-900 text-white" : "bg-white text-slate-900")}>
