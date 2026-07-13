@@ -144,16 +144,27 @@ export default function App() {
     }
   };
 
-  useEffect(() => {
-    const q = query(collection(db, 'buildings'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+  // Busca a lista de prédios uma única vez (não fica "escutando" mudanças o
+  // tempo todo). Isso reduz bastante o consumo de cota, mas significa que
+  // mudanças feitas por outras pessoas só aparecem quando você atualizar
+  // manualmente (puxando a lista ou clicando em "Atualizar").
+  const fetchBuildings = async () => {
+    setIsLoading(true);
+    try {
+      const snapshot = await getDocs(collection(db, 'buildings'));
       const data = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() } as Building))
         .sort((a, b) => a.buildingNumber.localeCompare(b.buildingNumber, undefined, { numeric: true, sensitivity: 'base' }));
       setBuildings(data);
+    } catch (err) {
+      console.warn('Erro ao buscar prédios:', err);
+    } finally {
       setIsLoading(false);
-    });
-    return () => unsubscribe();
+    }
+  };
+
+  useEffect(() => {
+    fetchBuildings();
   }, []);
 
   useEffect(() => {
@@ -235,7 +246,9 @@ export default function App() {
         visitCount: 0,
         isCompleted: false
       });
-      setSelectedBuilding({ id: docRef.id, ...extracted } as Building);
+      const newB = { id: docRef.id, ...extracted } as Building;
+      setSelectedBuilding(newB);
+      setBuildings(prev => [...prev, newB].sort((a, b) => a.buildingNumber.localeCompare(b.buildingNumber, undefined, { numeric: true, sensitivity: 'base' })));
       setView('building');
       setShowManualModal(false);
       setManualText('');
@@ -277,7 +290,9 @@ export default function App() {
       if (manualForm.mailbox) newBuilding.mailbox = manualForm.mailbox;
       if (manualForm.intercom) newBuilding.intercom = manualForm.intercom;
       const docRef = await addDoc(collection(db, 'buildings'), newBuilding);
-      setSelectedBuilding({ id: docRef.id, ...newBuilding } as unknown as Building);
+      const newB = { id: docRef.id, ...newBuilding } as unknown as Building;
+      setSelectedBuilding(newB);
+      setBuildings(prev => [...prev, newB].sort((a, b) => a.buildingNumber.localeCompare(b.buildingNumber, undefined, { numeric: true, sensitivity: 'base' })));
       setView('building');
       setShowManualModal(false);
       resetManualForm();
@@ -522,6 +537,7 @@ export default function App() {
       visitsSnap.forEach((v) => batch.delete(v.ref));
       batch.delete(doc(db, 'buildings', buildingId));
       await batch.commit();
+      setBuildings(prev => prev.filter(b => b.id !== buildingId));
       setView('list'); setSelectedBuilding(null);
     } catch (error) { alert("Erro ao excluir prédio."); } finally { setIsUpdatingBuilding(false); }
   };
@@ -580,7 +596,10 @@ export default function App() {
           <div className="space-y-6">
             <div className="flex justify-between items-center px-1">
                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Prédios ({filteredBuildings.length})</h2>
-               <button onClick={() => setShowPasswordModal(true)} className="flex items-center gap-2 text-xs font-bold text-blue-600"><FileDown className="w-4 h-4" /> Relatório</button>
+               <div className="flex items-center gap-3">
+                 <button onClick={fetchBuildings} disabled={isLoading} className="flex items-center gap-1.5 text-xs font-bold text-slate-500"><RefreshCw className={cn("w-3.5 h-3.5", isLoading && "animate-spin")} /> Atualizar</button>
+                 <button onClick={() => setShowPasswordModal(true)} className="flex items-center gap-2 text-xs font-bold text-blue-600"><FileDown className="w-4 h-4" /> Relatório</button>
+               </div>
             </div>
 
             <div className="relative group">
