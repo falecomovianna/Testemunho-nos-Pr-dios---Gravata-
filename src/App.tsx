@@ -163,6 +163,11 @@ export default function App() {
     }
   };
 
+  const handleRefreshClick = async () => {
+    await fetchBuildings();
+    await syncAllBuildingStats();
+  };
+
   useEffect(() => {
     fetchBuildings();
   }, []);
@@ -442,9 +447,8 @@ export default function App() {
           });
         }
       }));
-      alert("Sincronizado!");
     } catch (error) {
-      alert("Erro no sync.");
+      console.warn('Erro ao sincronizar estatísticas:', error);
     } finally {
       setIsSyncingStats(false);
     }
@@ -597,7 +601,7 @@ export default function App() {
             <div className="flex justify-between items-center px-1">
                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Prédios ({filteredBuildings.length})</h2>
                <div className="flex items-center gap-3">
-                 <button onClick={fetchBuildings} disabled={isLoading} className="flex items-center gap-1.5 text-xs font-bold text-slate-500"><RefreshCw className={cn("w-3.5 h-3.5", isLoading && "animate-spin")} /> Atualizar</button>
+                 <button onClick={handleRefreshClick} disabled={isLoading || isSyncingStats} className="flex items-center gap-1.5 text-xs font-bold text-slate-500"><RefreshCw className={cn("w-3.5 h-3.5", (isLoading || isSyncingStats) && "animate-spin")} /> Atualizar</button>
                  <button onClick={() => setShowPasswordModal(true)} className="flex items-center gap-2 text-xs font-bold text-blue-600"><FileDown className="w-4 h-4" /> Relatório</button>
                </div>
             </div>
@@ -610,10 +614,6 @@ export default function App() {
             <div className="space-y-2">
               <div className="flex justify-between items-center px-1">
                  <h3 className="text-[10px] font-bold uppercase text-slate-400">Resumo do Trabalho</h3>
-                 <div className="flex items-center gap-3">
-                   <button onClick={migrateAllFacadePhotos} disabled={isMigratingPhotos} className="flex items-center gap-1.5 text-[10px] font-bold text-amber-600 hover:text-amber-700"><ImageIcon className={cn("w-3 h-3", isMigratingPhotos && "animate-pulse")} /> {isMigratingPhotos ? 'Migrando...' : 'Migrar fotos antigas'}</button>
-                   <button onClick={syncAllBuildingStats} disabled={isSyncingStats} className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 hover:text-blue-600"><RefreshCw className={cn("w-3 h-3", isSyncingStats && "animate-spin")} /> Sincronizar</button>
-                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <button onClick={() => setActiveFilter('all')} className={cn("p-4 rounded-3xl border", activeFilter === 'all' ? "bg-slate-900 text-white" : "bg-white text-slate-900")}>
